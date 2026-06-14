@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Usta Profili — Fixly.uz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #1a56db;
+      --blue-dark: #1341b0;
+      --green: #3ab246;
+      --gray-bg: #f4f6fb;
+      --gray-text: #6b7280;
+      --dark: #111827;
+      --border: #e5e7eb;
+      --white: #ffffff;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--gray-bg); color: var(--dark); }
+
+    /* NAVBAR */
+    nav {
+      background: white;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-logo { font-size: 22px; font-weight: 800; color: var(--blue); text-decoration: none; }
+    .nav-logo span { color: var(--green); }
+
+    .nav-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--gray-text);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* CONTAINER */
+    .container { max-width: 700px; margin: 0 auto; padding: 24px 16px 48px; }
+
+    /* PROFILE CARD */
+    .profile-card {
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    .profile-header {
+      background: linear-gradient(135deg, #1a56db, #1341b0);
+      padding: 32px 24px 24px;
+      text-align: center;
+      position: relative;
+    }
+
+    .verified-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--green);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4ade80, #3ab246);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 800;
+      color: white;
+      margin: 0 auto 16px;
+      border: 4px solid rgba(255,255,255,0.3);
+    }
+
+    .profile-name { font-size: 22px; font-weight: 800; color: white; margin-bottom: 4px; }
+    .profile-job { font-size: 15px; color: rgba(255,255,255,0.8); margin-bottom: 16px; }
+
+    .profile-stats {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+    }
+
+    .p-stat { text-align: center; }
+    .p-stat-num { font-size: 22px; font-weight: 800; color: white; }
+    .p-stat-label { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+
+    /* RATING */
+    .profile-body { padding: 24px; }
+
+    .rating-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .rating-big { font-size: 48px; font-weight: 800; color: var(--dark); }
+
+    .rating-right { flex: 1; }
+
+    .stars-big { color: #f59e0b; font-size: 20px; letter-spacing: 2px; }
+
+    .rating-count { font-size: 13px; color: var(--gray-text); margin-top: 4px; }
+
+    .rating-bars { flex: 1; }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .bar-label { font-size: 12px; color: var(--gray-text); width: 12px; }
+
+    .bar-track {
+      flex: 1;
+      height: 6px;
+      background: #f0f0f0;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .bar-fill { height: 100%; background: #f59e0b; border-radius: 3px; }
+
+    /* INFO */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .info-item {
+      background: var(--gray-bg);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .info-icon { font-size: 20px; margin-bottom: 6px; }
+    .info-label { font-size: 11px; color: var(--gray-text); font-weight: 600; text-transform: uppercase; }
+    .info-value { font-size: 14px; font-weight: 700; margin-top: 2px; }
+
+    /* ABOUT */
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      margin-top: 20px;
+    }
+
+    .about-text {
+      font-size: 14px;
+      color: var(--gray-text);
+      line-height: 1.7;
+    }
+
+    /* SKILLS */
+    .skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .skill-tag {
+      background: #eff6ff;
+      color: var(--blue);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* REVIEWS */
+    .review-card {
+      background: var(--gray-bg);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .review-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .review-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .review-name { font-size: 14px; font-weight: 700; }
+    .review-date { font-size: 12px; color: var(--gray-text); }
+    .review-stars { color: #f59e0b; font-size: 13px; margin-left: auto; }
+    .review-text { font-size: 14px; color: var(--gray-text); line-height: 1.6; }
+
+    /* ACTION BUTTONS */
+    .action-card {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      position: sticky;
+      bottom: 16px;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .price-label { font-size: 13px; color: var(--gray-text); }
+    .price-value { font-size: 22px; font-weight: 800; color: var(--blue); }
+    .price-unit { font-size: 13px; color: var(--gray-text); font-weight: 400; }
+
+    .btn-chat {
+      width: 100%;
+      padding: 14px;
+      background: white;
+      color: var(--blue);
+      border: 2px solid var(--blue);
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: all 0.2s;
+    }
+
+    .btn-chat:hover { background: #eff6ff; }
+
+    .btn-order {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-order:hover { opacity: 0.92; }
+
+    .available {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--green);
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    @media (max-width: 480px) {
+      .info-grid { grid-template-columns: 1fr 1fr; }
+      .rating-row { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-back">← Orqaga</a>
+  <a href="index.html" class="nav-logo">Fix<span>ly</span>.uz</a>
+  <div style="width:80px;"></div>
+</nav>
+
+<div class="container">
+
+  <!-- PROFILE CARD -->
+  <div class="profile-card">
+    <div class="profile-header">
+      <div class="verified-badge">✅ Tasdiqlangan</div>
+      <div class="avatar">A</div>
+      <div class="profile-name">Alisher Karimov</div>
+      <div class="profile-job">Santexnik • Toshkent</div>
+      <div class="profile-stats">
+        <div class="p-stat">
+          <div class="p-stat-num">127</div>
+          <div class="p-stat-label">Ish bajarildi</div>
+        </div>
+        <div class="p-stat">
+          <div class="p-stat-num">4.9</div>
+          <div class="p-stat-label">Reyting</div>
+        </div>
+        <div class="p-stat">
+          <div class="p-stat-num">3 yil</div>
+          <div class="p-stat-label">Tajriba</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-body">
+
+      <!-- RATING -->
+      <div class="rating-row">
+        <div>
+          <div class="rating-big">4.9</div>
+          <div class="stars-big">★★★★★</div>
+          <div class="rating-count">89 ta baholash</div>
+        </div>
+        <div class="rating-bars">
+          <div class="bar-row">
+            <span class="bar-label">5</span>
+            <div class="bar-track"><div class="bar-fill" style="width:85%"></div></div>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">4</span>
+            <div class="bar-track"><div class="bar-fill" style="width:10%"></div></div>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">3</span>
+            <div class="bar-track"><div class="bar-fill" style="width:3%"></div></div>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">2</span>
+            <div class="bar-track"><div class="bar-fill" style="width:1%"></div></div>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">1</span>
+            <div class="bar-track"><div class="bar-fill" style="width:1%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INFO -->
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-icon">📍</div>
+          <div class="info-label">Hudud</div>
+          <div class="info-value">Toshkent</div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon">⏱</div>
+          <div class="info-label">Javob vaqti</div>
+          <div class="info-value">~15 daqiqa</div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon">✅</div>
+          <div class="info-label">Bajarilgan ish</div>
+          <div class="info-value">127 ta</div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon">📅</div>
+          <div class="info-label">A'zo bo'lgan</div>
+          <div class="info-value">2022 yil</div>
+        </div>
+      </div>
+
+      <!-- ABOUT -->
+      <div class="section-title">Men haqimda</div>
+      <div class="about-text">
+        3 yillik tajribaga ega santexnik ustaman. Quvur almashtirish, kran o'rnatish, vannaxona ta'miri va boshqa santexnika ishlarini sifatli bajaraman. Ishni o'z vaqtida va kafolat bilan topshiraman.
+      </div>
+
+      <!-- SKILLS -->
+      <div class="section-title">Ko'nikmalar</div>
+      <div class="skills">
+        <span class="skill-tag">Quvur ta'miri</span>
+        <span class="skill-tag">Kran o'rnatish</span>
+        <span class="skill-tag">Vannaxona</span>
+        <span class="skill-tag">Suv isitgich</span>
+        <span class="skill-tag">Kanalizatsiya</span>
+      </div>
+
+      <!-- REVIEWS -->
+      <div class="section-title">Mijozlar izohlari</div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-avatar">M</div>
+          <div>
+            <div class="review-name">Muhammadali T.</div>
+            <div class="review-date">2 kun oldin</div>
+          </div>
+          <div class="review-stars">★★★★★</div>
+        </div>
+        <div class="review-text">Juda yaxshi usta! Tez keldi, ishni sifatli bajardi. Albatta yana chaqiraman.</div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-avatar" style="background: linear-gradient(135deg, #7c3aed, #4f46e5);">Z</div>
+          <div>
+            <div class="review-name">Zulfiya R.</div>
+            <div class="review-date">1 hafta oldin</div>
+          </div>
+          <div class="review-stars">★★★★★</div>
+        </div>
+        <div class="review-text">Vannaxonadagi quvurni almashtirdi. Narxi adolatli, ishi toza. Tavsiya qilaman!</div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-avatar" style="background: linear-gradient(135deg, #f59e0b, #ef4444);">S</div>
+          <div>
+            <div class="review-name">Sardor N.</div>
+            <div class="review-date">2 hafta oldin</div>
+          </div>
+          <div class="review-stars">★★★★☆</div>
+        </div>
+        <div class="review-text">Yaxshi ish bajardi, biroz kechikdi lekin sifat zo'r edi.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ACTION CARD -->
+  <div class="action-card">
+    <div class="available">
+      <div class="dot"></div>
+      Hozir bo'sh, buyurtma qabul qiladi
+    </div>
+    <div class="price-row">
+      <div>
+        <div class="price-label">Boshlang'ich narx</div>
+        <div class="price-value">50 000 <span class="price-unit">so'm/soat</span></div>
+      </div>
+      <div style="text-align:right;">
+        <div class="price-label">Kelish narxi</div>
+        <div style="font-size:14px;font-weight:700;color:var(--green);">Muzokarali</div>
+      </div>
+    </div>
+    <button class="btn-chat" onclick="window.location.href='chat.html'">💬 Chat orqali gaplashish</button>
+    <button class="btn-order" onclick="window.location.href='order.html'">📅 Buyurtma berish</button>
+  </div>
+
+</div>
+
+</body>
+</html>
