@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>To'lov — Fixly.uz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #1a56db; --blue-dark: #1341b0; --green: #3ab246;
+      --gray-bg: #f4f6fb; --gray-text: #6b7280; --dark: #111827; --border: #e5e7eb;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--gray-bg); color: var(--dark); }
+
+    nav {
+      background: white; box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+      padding: 0 24px; height: 64px; display: flex; align-items: center;
+      justify-content: space-between; position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo { font-size: 22px; font-weight: 800; color: var(--blue); text-decoration: none; }
+    .nav-logo span { color: var(--green); }
+    .nav-back { color: var(--gray-text); text-decoration: none; font-size: 14px; font-weight: 600; }
+
+    .container { max-width: 520px; margin: 0 auto; padding: 24px 16px 48px; }
+
+    .card { background: white; border-radius: 20px; padding: 24px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); margin-bottom: 16px; }
+
+    .card-title { font-size: 17px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    .card-icon { width: 36px; height: 36px; border-radius: 10px; background: #eff6ff; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+    /* ORDER SUMMARY */
+    .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-label { color: var(--gray-text); }
+    .summary-value { font-weight: 600; }
+    .summary-total { font-size: 16px; font-weight: 800; color: var(--blue); }
+
+    /* PRICE INPUT */
+    .price-input-wrap { margin-bottom: 20px; }
+    .price-input-wrap label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .price-row { display: flex; gap: 8px; align-items: center; }
+    .price-input { flex: 1; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 18px; font-weight: 700; font-family: 'Inter', sans-serif; outline: none; text-align: right; }
+    .price-input:focus { border-color: var(--blue); }
+    .price-currency { font-size: 15px; font-weight: 700; color: var(--gray-text); }
+
+    /* COMMISSION */
+    .commission-box { background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; }
+    .comm-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; }
+    .comm-row:last-child { margin-bottom: 0; font-weight: 800; font-size: 15px; }
+    .comm-label { color: var(--gray-text); }
+    .comm-value { font-weight: 600; }
+    .comm-green { color: var(--green); }
+
+    /* CARD DISPLAY */
+    .bank-card {
+      background: linear-gradient(135deg, #1a56db, #1341b0);
+      border-radius: 18px; padding: 24px 20px; color: white; margin-bottom: 16px;
+      position: relative; overflow: hidden;
+    }
+    .bank-card::before { content: ''; position: absolute; top: -30px; right: -30px; width: 150px; height: 150px; background: rgba(255,255,255,0.08); border-radius: 50%; }
+    .card-bank { font-size: 13px; opacity: 0.8; margin-bottom: 20px; font-weight: 600; letter-spacing: 1px; }
+    .card-number { font-size: 20px; font-weight: 700; letter-spacing: 4px; margin-bottom: 16px; font-family: monospace; }
+    .card-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
+    .card-owner-label { font-size: 10px; opacity: 0.7; margin-bottom: 4px; }
+    .card-owner { font-size: 14px; font-weight: 700; }
+
+    .copy-btn {
+      background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+      color: white; padding: 8px 16px; border-radius: 8px; font-size: 13px;
+      font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,0.3); }
+
+    /* STEPS */
+    .steps-box { background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+    .steps-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; color: #92400e; }
+    .step-item { display: flex; gap: 10px; font-size: 13px; color: #92400e; margin-bottom: 8px; align-items: flex-start; }
+    .step-item:last-child { margin-bottom: 0; }
+    .step-num { width: 20px; height: 20px; background: #f59e0b; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+
+    /* CONFIRM */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .form-group input { width: 100%; padding: 13px 16px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-family: 'Inter', sans-serif; outline: none; }
+    .form-group input:focus { border-color: var(--blue); }
+
+    .btn-confirm { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--green), #2d9e38); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+    .btn-confirm:hover { opacity: 0.9; }
+
+    /* SUCCESS */
+    .success-screen { display: none; text-align: center; padding: 32px; }
+    .success-icon { font-size: 72px; margin-bottom: 16px; }
+    .success-title { font-size: 24px; font-weight: 800; color: var(--green); margin-bottom: 10px; }
+    .success-text { color: var(--gray-text); font-size: 15px; line-height: 1.7; }
+
+    .btn-home { width: 100%; padding: 14px; background: var(--blue); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 24px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="order.html" class="nav-back">← Orqaga</a>
+  <a href="index.html" class="nav-logo">Fix<span>ly</span>.uz</a>
+  <div style="width:60px;"></div>
+</nav>
+
+<div class="container">
+
+  <div id="payment-content">
+
+    <!-- BUYURTMA MA'LUMOTI -->
+    <div class="card">
+      <div class="card-title"><div class="card-icon">📋</div> Buyurtma ma'lumoti</div>
+      <div class="summary-row"><span class="summary-label">Usta</span><span class="summary-value">Alisher Karimov</span></div>
+      <div class="summary-row"><span class="summary-label">Xizmat turi</span><span class="summary-value">Santexnik</span></div>
+      <div class="summary-row"><span class="summary-label">Buyurtma raqami</span><span class="summary-value">#FX-1042</span></div>
+    </div>
+
+    <!-- NARX KIRITING -->
+    <div class="card">
+      <div class="card-title"><div class="card-icon">💰</div> To'lov summasi</div>
+
+      <div class="price-input-wrap">
+        <label>Ish narxini kiriting (so'm)</label>
+        <div class="price-row">
+          <input type="number" class="price-input" id="price-input" placeholder="100000" oninput="calcCommission()"/>
+          <span class="price-currency">so'm</span>
+        </div>
+      </div>
+
+      <div class="commission-box" id="commission-box" style="display:none;">
+        <div class="comm-row">
+          <span class="comm-label">Ish narxi:</span>
+          <span class="comm-value" id="comm-total">0 so'm</span>
+        </div>
+        <div class="comm-row">
+          <span class="comm-label">Fixly.uz komissiyasi (3%):</span>
+          <span class="comm-value comm-green" id="comm-fixly">0 so'm</span>
+        </div>
+        <div class="comm-row">
+          <span class="comm-label">Ustaga o'tkaziladi:</span>
+          <span class="comm-value" id="comm-usta">0 so'm</span>
+        </div>
+        <div style="border-top:1px solid #86efac;margin:10px 0;"></div>
+        <div class="comm-row">
+          <span>Siz to'laydigan summa:</span>
+          <span class="summary-total" id="comm-pay">0 so'm</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KARTA -->
+    <div class="card" id="card-section" style="display:none;">
+      <div class="card-title"><div class="card-icon">💳</div> Fixly.uz karta raqami</div>
+
+      <div class="bank-card">
+        <div class="card-bank">FIXLY.UZ • HUMO</div>
+        <div class="card-number">4067 0700 0096 9498</div>
+        <div class="card-bottom">
+          <div>
+            <div class="card-owner-label">KARTA EGASI</div>
+            <div class="card-owner">FIXLY UZ</div>
+          </div>
+          <button class="copy-btn" onclick="copyCard()">📋 Nusxa olish</button>
+        </div>
+      </div>
+
+      <div class="steps-box">
+        <div class="steps-title">⚡ Qanday to'lash kerak:</div>
+        <div class="step-item"><div class="step-num">1</div>Yuqoridagi karta raqamini nusxa oling</div>
+        <div class="step-item"><div class="step-num">2</div>Bank ilovangizni oching (Humo, Click, Payme)</div>
+        <div class="step-item"><div class="step-num">3</div><span id="step3-text">Summani kiriting va o'tkazing</span></div>
+        <div class="step-item"><div class="step-num">4</div>Chek rasmini yuborish maydoniga yuklang</div>
+        <div class="step-item"><div class="step-num">5</div>Tasdiqlash tugmasini bosing</div>
+      </div>
+
+      <div class="form-group">
+        <label>To'lov cheki (screenshot)</label>
+        <div style="border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onclick="document.getElementById('chek-file').click()">
+          <input type="file" id="chek-file" accept="image/*" style="display:none;" onchange="showChek(this)"/>
+          <div style="font-size:28px;margin-bottom:8px;">📸</div>
+          <div style="font-size:13px;color:var(--gray-text);">To'lov cheki rasmini yuklang</div>
+          <div style="font-size:13px;color:var(--green);font-weight:600;margin-top:6px;display:none;" id="chek-name"></div>
+        </div>
+      </div>
+
+      <button class="btn-confirm" onclick="confirmPayment()">✅ To'lovni tasdiqlash</button>
+    </div>
+
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="card success-screen" id="success-screen">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">To'lov tasdiqlandi!</div>
+    <p class="success-text">To'lovingiz qabul qilindi. Usta tez orada siz bilan bog'lanadi.</p>
+    <br/>
+    <div style="background:var(--gray-bg);border-radius:12px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:12px;color:var(--gray-text);margin-bottom:4px;">To'langan summa</div>
+      <div style="font-size:22px;font-weight:800;color:var(--green);" id="paid-amount">0 so'm</div>
+    </div>
+    <button class="btn-home" onclick="window.location.href='index.html'">🏠 Bosh sahifaga</button>
+  </div>
+
+</div>
+
+<script>
+  const COMMISSION = 0.03; // 3%
+  const CARD = '4067070000969498';
+
+  function formatNum(n) {
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  }
+
+  function calcCommission() {
+    const price = parseInt(document.getElementById('price-input').value) || 0;
+    const box = document.getElementById('commission-box');
+    const cardSection = document.getElementById('card-section');
+
+    if (price > 0) {
+      const fixly = Math.round(price * COMMISSION);
+      const usta = price - fixly;
+
+      document.getElementById('comm-total').textContent = formatNum(price) + ' so\'m';
+      document.getElementById('comm-fixly').textContent = formatNum(fixly) + ' so\'m';
+      document.getElementById('comm-usta').textContent = formatNum(usta) + ' so\'m';
+      document.getElementById('comm-pay').textContent = formatNum(price) + ' so\'m';
+      document.getElementById('step3-text').textContent = formatNum(price) + ' so\'m kiriting va o\'tkazing';
+
+      box.style.display = 'block';
+      cardSection.style.display = 'block';
+    } else {
+      box.style.display = 'none';
+      cardSection.style.display = 'none';
+    }
+  }
+
+  function copyCard() {
+    navigator.clipboard.writeText(CARD).then(() => {
+      alert('✅ Karta raqami nusxa olindi!\n' + CARD);
+    }).catch(() => {
+      prompt('Karta raqamini nusxa oling:', CARD);
+    });
+  }
+
+  function showChek(input) {
+    if (input.files && input.files[0]) {
+      const name = document.getElementById('chek-name');
+      name.textContent = '✅ ' + input.files[0].name;
+      name.style.display = 'block';
+    }
+  }
+
+  function confirmPayment() {
+    const price = parseInt(document.getElementById('price-input').value) || 0;
+    const chek = document.getElementById('chek-file').files[0];
+
+    if (!price) { alert('Summani kiriting!'); return; }
+    if (!chek) { alert('To\'lov chekini yuklang!'); return; }
+
+    document.getElementById('paid-amount').textContent = formatNum(price) + ' so\'m';
+    document.getElementById('payment-content').style.display = 'none';
+    document.getElementById('success-screen').style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+</script>
+
+</body>
+            </html>
