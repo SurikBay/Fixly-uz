@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Baholash — Fixly.uz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #1a56db; --blue-dark: #1341b0; --green: #3ab246;
+      --yellow: #f59e0b; --gray-bg: #f4f6fb; --gray-text: #6b7280;
+      --dark: #111827; --border: #e5e7eb;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--gray-bg); color: var(--dark); min-height: 100vh; }
+
+    nav { background: white; box-shadow: 0 1px 8px rgba(0,0,0,0.08); padding: 0 20px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { font-size: 20px; font-weight: 800; color: var(--blue); text-decoration: none; }
+    .nav-logo span { color: var(--green); }
+    .nav-back { color: var(--gray-text); font-size: 14px; font-weight: 600; text-decoration: none; }
+
+    .container { max-width: 500px; margin: 0 auto; padding: 24px 16px 48px; }
+
+    .card { background: white; border-radius: 20px; padding: 28px 24px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); margin-bottom: 16px; }
+
+    /* USTA INFO */
+    .usta-info { display: flex; align-items: center; gap: 14px; padding: 16px; background: var(--gray-bg); border-radius: 14px; margin-bottom: 24px; }
+    .usta-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--green)); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: white; flex-shrink: 0; }
+    .usta-name { font-size: 16px; font-weight: 700; }
+    .usta-job { font-size: 13px; color: var(--gray-text); margin-top: 2px; }
+    .order-num { font-size: 12px; color: var(--blue); font-weight: 600; margin-top: 4px; }
+
+    /* STARS */
+    .stars-section { text-align: center; margin-bottom: 28px; }
+    .stars-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+    .stars-sub { font-size: 14px; color: var(--gray-text); margin-bottom: 20px; }
+
+    .stars-row { display: flex; justify-content: center; gap: 12px; margin-bottom: 12px; }
+    .star-btn { font-size: 44px; cursor: pointer; transition: transform 0.15s; filter: grayscale(1); opacity: 0.4; border: none; background: none; padding: 4px; }
+    .star-btn.active { filter: grayscale(0); opacity: 1; transform: scale(1.15); }
+    .star-btn:hover { transform: scale(1.2); filter: grayscale(0); opacity: 0.8; }
+
+    .rating-label { font-size: 16px; font-weight: 700; color: var(--yellow); min-height: 24px; }
+
+    /* CATEGORIES */
+    .cat-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+    .cat-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .cat-btn { padding: 8px 14px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; background: white; color: var(--gray-text); transition: all 0.2s; }
+    .cat-btn.active { border-color: var(--green); background: #f0fdf4; color: var(--green); }
+
+    /* COMMENT */
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .form-group textarea { width: 100%; padding: 13px 16px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-family: 'Inter', sans-serif; outline: none; resize: none; min-height: 100px; line-height: 1.6; background: #fafafa; }
+    .form-group textarea:focus { border-color: var(--blue); background: white; }
+
+    /* TIPS */
+    .tip-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .tip-btn { padding: 6px 12px; background: #eff6ff; color: var(--blue); border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+    /* SUBMIT */
+    .btn-submit { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--yellow), #d97706); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+    .btn-submit:hover { opacity: 0.9; }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* SUCCESS */
+    .success-screen { display: none; text-align: center; padding: 40px 24px; }
+    .success-anim { font-size: 80px; margin-bottom: 16px; animation: bounce 0.5s ease; }
+    @keyframes bounce { 0% { transform: scale(0); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    .success-title { font-size: 24px; font-weight: 800; color: var(--green); margin-bottom: 10px; }
+    .success-text { color: var(--gray-text); font-size: 15px; line-height: 1.7; margin-bottom: 24px; }
+
+    .rating-result { display: flex; justify-content: center; gap: 4px; font-size: 28px; margin-bottom: 20px; }
+
+    .btn-home { width: 100%; padding: 14px; background: var(--blue); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="mijoz-dashboard.html" class="nav-back">← Orqaga</a>
+  <a href="index.html" class="nav-logo">Fix<span>ly</span>.uz</a>
+  <div style="width:60px;"></div>
+</nav>
+
+<div class="container">
+
+  <div id="rating-content">
+    <div class="card">
+      <!-- Usta info -->
+      <div class="usta-info">
+        <div class="usta-avatar">A</div>
+        <div>
+          <div class="usta-name">Alisher Karimov</div>
+          <div class="usta-job">Santexnik</div>
+          <div class="order-num">#FX-1042 — Ish tugadi ✅</div>
+        </div>
+      </div>
+
+      <!-- Yulduzlar -->
+      <div class="stars-section">
+        <div class="stars-title">Ishni baholang</div>
+        <div class="stars-sub">Ustaning ishi qanchalik yoqdi?</div>
+
+        <div class="stars-row">
+          <button class="star-btn" onclick="setRating(1)" id="star-1">⭐</button>
+          <button class="star-btn" onclick="setRating(2)" id="star-2">⭐</button>
+          <button class="star-btn" onclick="setRating(3)" id="star-3">⭐</button>
+          <button class="star-btn" onclick="setRating(4)" id="star-4">⭐</button>
+          <button class="star-btn" onclick="setRating(5)" id="star-5">⭐</button>
+        </div>
+
+        <div class="rating-label" id="rating-label">Yulduz tanlang</div>
+      </div>
+
+      <!-- Kategoriyalar -->
+      <div class="cat-title">Nima yoqdi? (ixtiyoriy)</div>
+      <div class="cat-grid">
+        <button class="cat-btn" onclick="toggleCat(this)">⚡ Tez ishladi</button>
+        <button class="cat-btn" onclick="toggleCat(this)">💎 Sifatli ish</button>
+        <button class="cat-btn" onclick="toggleCat(this)">😊 Muomilali</button>
+        <button class="cat-btn" onclick="toggleCat(this)">💰 Narxi adolatli</button>
+        <button class="cat-btn" onclick="toggleCat(this)">🎯 Aniq keldi</button>
+        <button class="cat-btn" onclick="toggleCat(this)">🔧 Professional</button>
+      </div>
+
+      <!-- Izoh -->
+      <div class="form-group">
+        <label>Izoh qoldiring <span style="color:var(--gray-text);font-weight:400;">(ixtiyoriy)</span></label>
+        <textarea id="comment" placeholder="Usta haqida boshqalarga nima aytmoqchisiz?"></textarea>
+        <div class="tip-btns">
+          <button class="tip-btn" onclick="addTip('Juda yaxshi usta, tavsiya qilaman!')">👍 Tavsiya</button>
+          <button class="tip-btn" onclick="addTip('Tez va sifatli bajardi')">⚡ Tez va sifatli</button>
+          <button class="tip-btn" onclick="addTip('Narxi boshqalarga nisbatan arzon')">💰 Arzon narx</button>
+        </div>
+      </div>
+
+      <button class="btn-submit" id="submit-btn" onclick="submitRating()" disabled>⭐ Baholashni yuborish</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="card success-screen" id="success-screen">
+    <div class="success-anim">🎉</div>
+    <div class="success-title">Rahmat!</div>
+    <div class="rating-result" id="rating-result"></div>
+    <div class="success-text">Sizning bahoyingiz boshqa mijozlarga usta tanlashda yordam beradi!</div>
+    <button class="btn-home" onclick="window.location.href='index.html'">🏠 Bosh sahifaga</button>
+  </div>
+
+</div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://envyyamptxoqcfovdavm.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudnl5YW1wdHhvcWNmb3ZkYXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTI4NDEsImV4cCI6MjA5NzAyODg0MX0.qB-977hSOnQYizkYCzQxIBBQNqcdxJ-pbpx98yCToMU'
+);
+
+let selectedRating = 0;
+
+const labels = {
+  1: '😞 Yomon — Umuman yoqmadi',
+  2: '😐 Qoniqarli — Yaxshilanishi kerak',
+  3: '🙂 Normal — O\'rtacha ish',
+  4: '😊 Yaxshi — Mamnun qoldim',
+  5: '🤩 Ajoyib — Zo\'r usta!'
+};
+
+function setRating(n) {
+  selectedRating = n;
+  for (let i = 1; i <= 5; i++) {
+    const star = document.getElementById('star-' + i);
+    if (i <= n) {
+      star.classList.add('active');
+    } else {
+      star.classList.remove('active');
+    }
+  }
+  document.getElementById('rating-label').textContent = labels[n];
+  document.getElementById('submit-btn').disabled = false;
+}
+
+function toggleCat(el) {
+  el.classList.toggle('active');
+}
+
+function addTip(text) {
+  const ta = document.getElementById('comment');
+  ta.value = text;
+  ta.focus();
+}
+
+async function submitRating() {
+  if (!selectedRating) return;
+
+  const comment = document.getElementById('comment').value.trim();
+  const cats = Array.from(document.querySelectorAll('.cat-btn.active')).map(b => b.textContent.trim());
+
+  try {
+    // Rating ni saqlash
+    await sb.from('buyurtmalar').update({
+      status: 'done',
+    }).eq('id', 'demo-id');
+  } catch(e) {}
+
+  // Show success
+  const stars = '⭐'.repeat(selectedRating);
+  document.getElementById('rating-result').textContent = stars;
+  document.getElementById('rating-content').style.display = 'none';
+  document.getElementById('success-screen').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
