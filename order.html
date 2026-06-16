@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Buyurtma berish — Fixly.uz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #1a56db;
+      --blue-dark: #1341b0;
+      --green: #3ab246;
+      --gray-bg: #f4f6fb;
+      --gray-text: #6b7280;
+      --dark: #111827;
+      --border: #e5e7eb;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--gray-bg); color: var(--dark); }
+
+    nav {
+      background: white;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-logo { font-size: 22px; font-weight: 800; color: var(--blue); text-decoration: none; }
+    .nav-logo span { color: var(--green); }
+    .nav-back { color: var(--gray-text); text-decoration: none; font-size: 14px; font-weight: 600; }
+
+    .container { max-width: 600px; margin: 0 auto; padding: 24px 16px 48px; }
+
+    /* PROGRESS */
+    .progress {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 28px;
+    }
+
+    .step-dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      background: #e5e7eb;
+      color: var(--gray-text);
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .step-dot.active { background: var(--blue); color: white; }
+    .step-dot.done { background: var(--green); color: white; }
+
+    .step-line {
+      flex: 1;
+      height: 3px;
+      background: #e5e7eb;
+      max-width: 60px;
+      transition: background 0.3s;
+    }
+
+    .step-line.done { background: var(--green); }
+
+    /* CARD */
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 28px 24px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: #eff6ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    /* USTA INFO */
+    .usta-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      background: var(--gray-bg);
+      border-radius: 14px;
+      margin-bottom: 20px;
+    }
+
+    .usta-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 800;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .usta-name { font-size: 16px; font-weight: 700; }
+    .usta-job { font-size: 13px; color: var(--gray-text); margin-top: 2px; }
+    .usta-rating { font-size: 13px; color: #f59e0b; margin-top: 4px; }
+
+    /* FORM */
+    .form-group { margin-bottom: 18px; }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--dark);
+    }
+
+    .label-hint {
+      font-size: 12px;
+      color: var(--gray-text);
+      font-weight: 400;
+      margin-left: 6px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 13px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      color: var(--dark);
+      background: #fafafa;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--blue);
+      background: white;
+    }
+
+    textarea { resize: none; min-height: 100px; line-height: 1.6; }
+
+    /* DATE TIME */
+    .datetime-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* FILE UPLOAD */
+    .file-upload {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #fafafa;
+    }
+
+    .file-upload:hover { border-color: var(--blue); background: #eff6ff; }
+    .file-upload input { display: none; }
+    .file-icon { font-size: 28px; margin-bottom: 8px; }
+    .file-text { font-size: 13px; color: var(--gray-text); }
+    .file-text span { color: var(--blue); font-weight: 600; }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .preview-img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+    }
+
+    /* URGENCY */
+    .urgency-btns {
+      display: flex;
+      gap: 10px;
+    }
+
+    .urgency-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-text);
+      transition: all 0.2s;
+      background: white;
+    }
+
+    .urgency-btn.active { border-color: var(--blue); color: var(--blue); background: #eff6ff; }
+    .urgency-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+
+    /* SUMMARY */
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .summary-row:last-child { border-bottom: none; }
+    .summary-label { color: var(--gray-text); }
+    .summary-value { font-weight: 600; }
+
+    /* BUTTONS */
+    .btn-next {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s;
+    }
+
+    .btn-next:hover { opacity: 0.92; }
+
+    .btn-back {
+      width: 100%;
+      padding: 13px;
+      background: white;
+      color: var(--blue);
+      border: 2px solid var(--blue);
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.2s;
+    }
+
+    .btn-back:hover { background: #eff6ff; }
+
+    /* SUCCESS */
+    .success-screen {
+      display: none;
+      text-align: center;
+      padding: 40px 24px;
+    }
+
+    .success-anim { font-size: 72px; margin-bottom: 20px; animation: bounce 0.5s ease; }
+
+    @keyframes bounce {
+      0% { transform: scale(0); }
+      70% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .success-title { font-size: 24px; font-weight: 800; color: var(--green); margin-bottom: 10px; }
+    .success-text { color: var(--gray-text); font-size: 15px; line-height: 1.7; margin-bottom: 24px; }
+
+    .order-number {
+      background: var(--gray-bg);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .order-num-label { font-size: 12px; color: var(--gray-text); margin-bottom: 4px; }
+    .order-num-value { font-size: 22px; font-weight: 800; color: var(--blue); }
+
+    .steps-info {
+      text-align: left;
+      background: #f0fdf4;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .step-info-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      color: var(--dark);
+    }
+
+    .step-info-item:last-child { margin-bottom: 0; }
+
+    @media (max-width: 480px) {
+      .card { padding: 20px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="profile.html" class="nav-back">← Orqaga</a>
+  <a href="index.html" class="nav-logo">Fix<span>ly</span>.uz</a>
+  <div style="width:60px;"></div>
+</nav>
+
+<div class="container">
+
+  <!-- PROGRESS BAR -->
+  <div class="progress">
+    <div class="step-dot active" id="dot1">1</div>
+    <div class="step-line" id="line1"></div>
+    <div class="step-dot" id="dot2">2</div>
+    <div class="step-line" id="line2"></div>
+    <div class="step-dot" id="dot3">3</div>
+  </div>
+
+  <!-- STEP 1 — MUAMMO -->
+  <div id="step1">
+    <div class="card">
+      <div class="card-title">
+        <div class="card-icon">🔧</div>
+        Usta tanlandi
+      </div>
+
+      <div class="usta-info">
+        <div class="usta-avatar">A</div>
+        <div>
+          <div class="usta-name">Alisher Karimov</div>
+          <div class="usta-job">Santexnik</div>
+          <div class="usta-rating">★★★★★ 4.9 • 127 ish</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Muammo tavsifi <span class="label-hint">* majburiy</span></label>
+        <textarea id="problem" placeholder="Masalan: Vannaxonadagi kran suv tomchilatyapti, almashtirishim kerak..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Muammoning shoshilinchligi</label>
+        <div class="urgency-btns">
+          <div class="urgency-btn active" onclick="selectUrgency(this, 'normal')">
+            <span class="urgency-icon">🕐</span>
+            Oddiy
+          </div>
+          <div class="urgency-btn" onclick="selectUrgency(this, 'urgent')">
+            <span class="urgency-icon">⚡</span>
+            Shoshilinch
+          </div>
+          <div class="urgency-btn" onclick="selectUrgency(this, 'very-urgent')">
+            <span class="urgency-icon">🚨</span>
+            Juda tez
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Rasm yuklang <span class="label-hint">(ixtiyoriy, max 3 ta)</span></label>
+        <div class="file-upload" onclick="document.getElementById('photos').click()">
+          <input type="file" id="photos" accept="image/*" multiple onchange="previewPhotos(this)"/>
+          <div class="file-icon">📷</div>
+          <div class="file-text"><span>Rasm tanlash</span> yoki kamera</div>
+        </div>
+        <div class="preview-grid" id="preview-grid"></div>
+      </div>
+
+      <button class="btn-next" onclick="goStep2()">Davom etish →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 — SANA VA MANZIL -->
+  <div id="step2" style="display:none;">
+    <div class="card">
+      <div class="card-title">
+        <div class="card-icon">📅</div>
+        Sana va manzil
+      </div>
+
+      <div class="form-group">
+        <label>Qaysi kuni kelsin?</label>
+        <div class="datetime-row">
+          <input type="date" id="date" />
+          <input type="time" id="time" value="10:00"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Viloyat / Shahar</label>
+        <select id="city">
+          <option value="">Tanlang...</option>
+          <option>Toshkent shahri</option>
+          <option>Toshkent viloyati</option>
+          <option>Samarqand</option>
+          <option>Buxoro</option>
+          <option>Andijon</option>
+          <option>Farg'ona</option>
+          <option>Namangan</option>
+          <option>Qashqadaryo</option>
+          <option>Surxondaryo</option>
+          <option>Jizzax</option>
+          <option>Sirdaryo</option>
+          <option>Navoiy</option>
+          <option>Xorazm</option>
+          <option>Qoraqalpog'iston</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>To'liq manzil</label>
+        <input type="text" id="address" placeholder="Ko'cha, uy raqami, kvartira..."/>
+      </div>
+
+      <div class="form-group">
+        <label>Telefon raqam <span class="label-hint">(usta siz bilan bog'lanadi)</span></label>
+        <input type="tel" id="phone" placeholder="+998 90 123 45 67"/>
+      </div>
+
+      <div class="form-group">
+        <label>Qo'shimcha izoh <span class="label-hint">(ixtiyoriy)</span></label>
+        <input type="text" id="note" placeholder="Masalan: 3-qavat, lift yo'q..."/>
+      </div>
+
+      <button class="btn-next" onclick="goStep3()">Davom etish →</button>
+      <button class="btn-back" onclick="goBack(1)">← Orqaga</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 — TASDIQLASH -->
+  <div id="step3" style="display:none;">
+    <div class="card">
+      <div class="card-title">
+        <div class="card-icon">✅</div>
+        Buyurtmani tasdiqlash
+      </div>
+
+      <div id="summary"></div>
+
+      <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:10px;padding:14px;margin-bottom:20px;font-size:13px;color:#92400e;">
+        💡 Usta buyurtmangizni ko'rib, qabul yoki rad qiladi. Qabul qilinsa SMS orqali xabar olasiz.
+      </div>
+
+      <button class="btn-next" onclick="submitOrder()">📤 Buyurtma yuborish</button>
+      <button class="btn-back" onclick="goBack(2)">← Orqaga</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="card success-screen" id="success">
+    <div class="success-anim">🎉</div>
+    <div class="success-title">Buyurtma yuborildi!</div>
+    <div class="success-text">Usta buyurtmangizni ko'rib chiqmoqda. Tez orada javob olasiz.</div>
+
+    <div class="order-number">
+      <div class="order-num-label">Buyurtma raqami</div>
+      <div class="order-num-value" id="order-num">#FX-0001</div>
+    </div>
+
+    <div class="steps-info">
+      <div class="step-info-item">⏳ Usta buyurtmani ko'rib chiqadi (30 daqiqa)</div>
+      <div class="step-info-item">📱 Qabul qilinsa telefonga xabar keladi</div>
+      <div class="step-info-item">🏠 Usta belgilangan vaqtda keladi</div>
+      <div class="step-info-item">⭐ Ish tugagach baholaysiz</div>
+    </div>
+
+    <button class="btn-next" onclick="window.location.href='index.html'">🏠 Bosh sahifaga</button>
+  </div>
+
+</div>
+
+<script>
+  let urgency = 'normal';
+  let photos = [];
+
+  function initDate() {
+    const dateInput = document.getElementById('date');
+    if (dateInput) {
+      const today = new Date().toISOString().split('T')[0];
+      dateInput.min = today;
+      dateInput.value = today;
+    }
+  }
+
+  function selectUrgency(el, val) {
+    urgency = val;
+    document.querySelectorAll('.urgency-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function previewPhotos(input) {
+    const grid = document.getElementById('preview-grid');
+    grid.innerHTML = '';
+    const files = Array.from(input.files).slice(0, 3);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'preview-img';
+        grid.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function updateProgress(step) {
+    for (let i = 1; i <= 3; i++) {
+      const dot = document.getElementById('dot' + i);
+      dot.className = 'step-dot';
+      if (i < step) dot.classList.add('done');
+      else if (i === step) dot.classList.add('active');
+    }
+    for (let i = 1; i <= 2; i++) {
+      const line = document.getElementById('line' + i);
+      line.className = 'step-line';
+      if (i < step) line.classList.add('done');
+    }
+  }
+
+  function goStep2() {
+    const problem = document.getElementById('problem').value.trim();
+    if (!problem) { alert('Muammo tavsifini yozing!'); return; }
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'block';
+    updateProgress(2);
+    initDate();
+    window.scrollTo(0, 0);
+  }
+
+  function goStep3() {
+    const date = document.getElementById('date').value;
+    const city = document.getElementById('city').value;
+    const address = document.getElementById('address').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+
+    if (!date) { alert('Sanani tanlang!'); return; }
+    if (!city) { alert('Shaharni tanlang!'); return; }
+    if (!address) { alert('Manzilni kiriting!'); return; }
+    if (!phone) { alert('Telefon raqamni kiriting!'); return; }
+
+    const urgencyText = urgency === 'normal' ? '🕐 Oddiy' : urgency === 'urgent' ? '⚡ Shoshilinch' : '🚨 Juda tez';
+    const dateStr = new Date(date).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
+    const time = document.getElementById('time').value;
+
+    document.getElementById('summary').innerHTML = `
+      <div class="summary-row"><span class="summary-label">Usta</span><span class="summary-value">Alisher Karimov</span></div>
+      <div class="summary-row"><span class="summary-label">Muammo</span><span class="summary-value">${document.getElementById('problem').value}</span></div>
+      <div class="summary-row"><span class="summary-label">Shoshilinchlik</span><span class="summary-value">${urgencyText}</span></div>
+      <div class="summary-row"><span class="summary-label">Sana</span><span class="summary-value">${dateStr}</span></div>
+      <div class="summary-row"><span class="summary-label">Vaqt</span><span class="summary-value">${time}</span></div>
+      <div class="summary-row"><span class="summary-label">Shahar</span><span class="summary-value">${city}</span></div>
+      <div class="summary-row"><span class="summary-label">Manzil</span><span class="summary-value">${address}</span></div>
+      <div class="summary-row"><span class="summary-label">Telefon</span><span class="summary-value">${phone}</span></div>
+    `;
+
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step3').style.display = 'block';
+    updateProgress(3);
+    window.scrollTo(0, 0);
+  }
+
+  function goBack(step) {
+    if (step === 1) {
+      document.getElementById('step2').style.display = 'none';
+      document.getElementById('step1').style.display = 'block';
+      updateProgress(1);
+    } else {
+      document.getElementById('step3').style.display = 'none';
+      document.getElementById('step2').style.display = 'block';
+      updateProgress(2);
+    }
+    window.scrollTo(0, 0);
+  }
+
+  const TELEGRAM_TOKEN = '8816641134:AAH8O9IZGdjgfTyEuCNrWuu4ORW8ULh_Ipk';
+  const TELEGRAM_CHAT_ID = '8309575465';
+
+  async function sendTelegram(message) {
+    try {
+      await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+    } catch(e) {
+      console.log('Telegram error:', e);
+    }
+  }
+
+  const { createClient } = supabase;
+  const sb = createClient(
+    'https://envyyamptxoqcfovdavm.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudnl5YW1wdHhvcWNmb3ZkYXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTI4NDEsImV4cCI6MjA5NzAyODg0MX0.qB-977hSOnQYizkYCzQxIBBQNqcdxJ-pbpx98yCToMU'
+  );
+
+  async function submitOrder() {
+    const num = '#FX-' + String(Math.floor(Math.random() * 9000) + 1000);
+
+    const problem = document.getElementById('problem').value;
+    const address = document.getElementById('address').value;
+    const phone = document.getElementById('phone').value;
+    const date = document.getElementById('date').value;
+    const time = document.getElementById('time').value;
+
+    try {
+      await sb.from('buyurtmalar').insert([{
+        problem: problem,
+        address: address,
+        phone: phone,
+        date_time: date + ' ' + time,
+        urgency: urgency,
+        status: 'pending'
+      }]);
+    } catch(e) {
+      console.log('Supabase error:', e);
+    }
+
+    // Telegram ga xabar yuborish
+    const msg = `🔔 <b>
