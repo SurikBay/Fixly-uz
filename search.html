@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Usta qidirish — Fixly.uz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #1a56db; --blue-dark: #1341b0; --green: #3ab246;
+      --gray-bg: #f4f6fb; --gray-text: #6b7280; --dark: #111827; --border: #e5e7eb;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--gray-bg); color: var(--dark); }
+
+    nav { background: white; box-shadow: 0 1px 8px rgba(0,0,0,0.08); padding: 0 20px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .nav-logo { font-size: 20px; font-weight: 800; color: var(--blue); text-decoration: none; }
+    .nav-logo span { color: var(--green); }
+    .nav-back { color: var(--gray-text); font-size: 14px; font-weight: 600; text-decoration: none; }
+
+    .container { max-width: 700px; margin: 0 auto; padding: 20px 16px 48px; }
+
+    /* SEARCH BOX */
+    .search-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); margin-bottom: 20px; }
+    .search-title { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+
+    .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    select { width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; background: #fafafa; color: var(--dark); }
+    select:focus { border-color: var(--blue); background: white; }
+
+    .search-input-row { display: flex; gap: 10px; }
+    .search-input { flex: 1; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; background: #fafafa; }
+    .search-input:focus { border-color: var(--blue); background: white; }
+
+    .btn-search { padding: 12px 24px; background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+    /* FILTER CHIPS */
+    .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; margin-bottom: 16px; }
+    .filter-chips::-webkit-scrollbar { display: none; }
+    .chip { white-space: nowrap; padding: 6px 14px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; background: white; color: var(--gray-text); transition: all 0.2s; flex-shrink: 0; }
+    .chip.active { border-color: var(--blue); background: #eff6ff; color: var(--blue); }
+
+    /* RESULTS */
+    .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .results-count { font-size: 14px; font-weight: 600; color: var(--gray-text); }
+    .sort-select { padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; }
+
+    /* USTA CARD */
+    .usta-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 12px; display: flex; gap: 16px; transition: all 0.2s; cursor: pointer; border: 1.5px solid transparent; }
+    .usta-card:hover { border-color: var(--blue); box-shadow: 0 4px 20px rgba(26,86,219,0.1); transform: translateY(-2px); }
+
+    .usta-avatar { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; color: white; flex-shrink: 0; }
+
+    .usta-body { flex: 1; }
+    .usta-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+    .usta-name { font-size: 16px; font-weight: 700; }
+    .usta-verified { font-size: 12px; color: var(--green); font-weight: 600; }
+    .usta-job { font-size: 13px; color: var(--gray-text); margin-bottom: 8px; }
+
+    .usta-stats { display: flex; gap: 14px; margin-bottom: 10px; }
+    .u-stat { font-size: 13px; color: var(--gray-text); }
+    .u-stat strong { color: var(--dark); }
+    .stars { color: #f59e0b; font-size: 13px; }
+
+    .usta-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .usta-tag { background: var(--gray-bg); border-radius: 6px; padding: 3px 8px; font-size: 12px; color: var(--gray-text); font-weight: 600; }
+
+    .usta-price { font-size: 15px; font-weight: 700; color: var(--blue); margin-bottom: 10px; }
+
+    .btn-profile { width: 100%; padding: 10px; background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+    .btn-profile:hover { opacity: 0.9; }
+
+    /* SKELETON */
+    .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* EMPTY */
+    .empty { text-align: center; padding: 48px 20px; color: var(--gray-text); }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-text { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .empty-sub { font-size: 13px; }
+
+    @media (max-width: 480px) {
+      .filter-grid { grid-template-columns: 1fr; }
+      .usta-card { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-back">← Orqaga</a>
+  <a href="index.html" class="nav-logo">Fix<span>ly</span>.uz</a>
+  <div style="width:60px;"></div>
+</nav>
+
+<div class="container">
+
+  <!-- SEARCH -->
+  <div class="search-card">
+    <div class="search-title">🔍 Usta qidirish</div>
+
+    <div class="filter-grid">
+      <select id="filter-specialty" onchange="search()">
+        <option value="">Barcha kategoriyalar</option>
+        <option>Santexnik</option>
+        <option>Elektrik</option>
+        <option>Uy ta'miri</option>
+        <option>Qurilish</option>
+        <option>Bo'yoq / Gips</option>
+        <option>Plitka</option>
+        <option>Konditsioner</option>
+        <option>Maishiy texnika</option>
+        <option>Mebel yig'ish</option>
+        <option>Sartarosh</option>
+        <option>Kosmetolog</option>
+      </select>
+
+      <select id="filter-region" onchange="search()">
+        <option value="">Barcha hududlar</option>
+        <option>Toshkent shahri</option>
+        <option>Toshkent viloyati</option>
+        <option>Samarqand</option>
+        <option>Buxoro</option>
+        <option>Andijon</option>
+        <option>Farg'ona</option>
+        <option>Namangan</option>
+        <option>Jizzax</option>
+        <option>Qashqadaryo</option>
+        <option>Surxondaryo</option>
+        <option>Navoiy</option>
+        <option>Xorazm</option>
+      </select>
+    </div>
+
+    <div class="search-input-row">
+      <input type="text" class="search-input" id="search-input" placeholder="Usta ismi yoki xizmat..."/>
+      <button class="btn-search" onclick="search()">🔍 Qidirish</button>
+    </div>
+  </div>
+
+  <!-- CHIPS -->
+  <div class="filter-chips">
+    <div class="chip active" onclick="filterChip(this, '')">Hammasi</div>
+    <div class="chip" onclick="filterChip(this, 'Santexnik')">🔧 Santexnik</div>
+    <div class="chip" onclick="filterChip(this, 'Elektrik')">⚡ Elektrik</div>
+    <div class="chip" onclick="filterChip(this, 'Qurilish')">🧱 Qurilish</div>
+    <div class="chip" onclick="filterChip(this, 'Bo\'yoq / Gips')">🪣 Bo'yoq</div>
+    <div class="chip" onclick="filterChip(this, 'Sartarosh')">✂️ Sartarosh</div>
+    <div class="chip" onclick="filterChip(this, 'Kosmetolog')">💆 Kosmetolog</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-header">
+    <div class="results-count" id="results-count">Yuklanmoqda...</div>
+    <select class="sort-select" id="sort-select" onchange="search()">
+      <option value="rating">Reyting bo'yicha</option>
+      <option value="jobs">Ishlar bo'yicha</option>
+    </select>
+  </div>
+
+  <div id="results-list">
+    <!-- Skeleton -->
+    <div class="usta-card">
+      <div class="skeleton" style="width:64px;height:64px;border-radius:50%;flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div class="skeleton" style="height:18px;width:60%;margin-bottom:8px;"></div>
+        <div class="skeleton" style="height:14px;width:40%;margin-bottom:8px;"></div>
+        <div class="skeleton" style="height:12px;width:80%;"></div>
+      </div>
+    </div>
+    <div class="usta-card">
+      <div class="skeleton" style="width:64px;height:64px;border-radius:50%;flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div class="skeleton" style="height:18px;width:60%;margin-bottom:8px;"></div>
+        <div class="skeleton" style="height:14px;width:40%;margin-bottom:8px;"></div>
+        <div class="skeleton" style="height:12px;width:80%;"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://envyyamptxoqcfovdavm.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudnl5YW1wdHhvcWNmb3ZkYXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTI4NDEsImV4cCI6MjA5NzAyODg0MX0.qB-977hSOnQYizkYCzQxIBBQNqcdxJ-pbpx98yCToMU'
+);
+
+const colors = [
+  'linear-gradient(135deg, #1a56db, #1341b0)',
+  'linear-gradient(135deg, #7c3aed, #4f46e5)',
+  'linear-gradient(135deg, #f59e0b, #ef4444)',
+  'linear-gradient(135deg, #3ab246, #059669)',
+  'linear-gradient(135deg, #ec4899, #8b5cf6)',
+];
+
+// URL parametrlarini olish
+const urlParams = new URLSearchParams(window.location.search);
+const urlSpecialty = urlParams.get('specialty') || '';
+const urlRegion = urlParams.get('region') || '';
+
+window.onload = function() {
+  if (urlSpecialty) document.getElementById('filter-specialty').value = urlSpecialty;
+  if (urlRegion) document.getElementById('filter-region').value = urlRegion;
+  search();
+};
+
+async function search() {
+  const specialty = document.getElementById('filter-specialty').value;
+  const region = document.getElementById('filter-region').value;
+  const keyword = document.getElementById('search-input').value.trim().toLowerCase();
+  const sort = document.getElementById('sort-select').value;
+
+  let query = sb.from('ustalar').select('*, users(full_name, phone)').eq('is_verified', true);
+
+  if (specialty) query = query.eq('specialty', specialty);
+  if (region) query = query.eq('region', region);
+
+  if (sort === 'rating') query = query.order('rating', { ascending: false });
+  else query = query.order('total_jobs', { ascending: false });
+
+  const { data, error } = await query;
+
+  let results = data || [];
+
+  // Demo ustalar qo'shish (database bo'sh bo'lsa)
+  if (results.length === 0) {
+    results = getDemoUstalar(specialty, region);
+  }
+
+  renderResults(results, keyword);
+}
+
+function getDemoUstalar(specialty, region) {
+  const all = [
+    { id: '1', specialty: 'Santexnik', region: 'Toshkent shahri', rating: 4.9, total_jobs: 127, is_verified: true, users: { full_name: 'Alisher Karimov' } },
+    { id: '2', specialty: 'Elektrik', region: 'Toshkent shahri', rating: 4.8, total_jobs: 89, is_verified: true, users: { full_name: 'Bobur Toshmatov' } },
+    { id: '3', specialty: 'Qurilish', region: 'Samarqand', rating: 4.9, total_jobs: 203, is_verified: true, users: { full_name: 'Sarvar Yusupov' } },
+    { id: '4', specialty: 'Bo\'yoq / Gips', region: 'Toshkent viloyati', rating: 4.7, total_jobs: 64, is_verified: true, users: { full_name: 'Jasur Rahimov' } },
+    { id: '5', specialty: 'Plitka', region: 'Andijon', rating: 4.8, total_jobs: 91, is_verified: true, users: { full_name: 'Sherzod Nazarov' } },
+    { id: '6', specialty: 'Sartarosh', region: 'Farg\'ona', rating: 4.6, total_jobs: 312, is_verified: true, users: { full_name: 'Doniyor Ergashev' } },
+    { id: '7', specialty: 'Konditsioner', region: 'Toshkent shahri', rating: 4.7, total_jobs: 78, is_verified: true, users: { full_name: 'Oybek Xasanov' } },
+    { id: '8', specialty: 'Santexnik', region: 'Samarqand', rating: 4.5, total_jobs: 45, is_verified: true, users: { full_name: 'Firdavs Mirzayev' } },
+  ];
+
+  let filtered = all;
+  if (specialty) filtered = filtered.filter(u => u.specialty === specialty);
+  if (region) filtered = filtered.filter(u => u.region === region);
+  return filtered;
+}
+
+function renderResults(data, keyword) {
+  const list = document.getElementById('results-list');
+
+  let filtered = data;
+  if (keyword) {
+    filtered = data.filter(u => {
+      const name = (u.users?.full_name || '').toLowerCase();
+      const spec = (u.specialty || '').toLowerCase();
+      return name.includes(keyword) || spec.includes(keyword);
+    });
+  }
+
+  document.getElementById('results-count').textContent = filtered.length + ' ta usta topildi';
+
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-text">Usta topilmadi</div>
+        <div class="empty-sub">Boshqa kategoriya yoki hudud tanlang</div>
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = filtered.map((u, i) => {
+    const name = u.users?.full_name || 'Usta';
+    const initial = name[0].toUpperCase();
+    const color = colors[i % colors.length];
+    const stars = '★'.repeat(Math.round(u.rating || 0)) + '☆'.repeat(5 - Math.round(u.rating || 0));
+
+    return `
+      <div class="usta-card" onclick="window.location.href='profile.html'">
+        <div class="usta-avatar" style="background:${color};">${initial}</div>
+        <div class="usta-body">
+          <div class="usta-top">
+            <div>
+              <div class="usta-name">${name}</div>
+              ${u.is_verified ? '<div class="usta-verified">✅ Tasdiqlangan</div>' : ''}
+            </div>
+          </div>
+          <div class="usta-job">🔧 ${u.specialty || '-'} • 📍 ${u.region || '-'}</div>
+          <div class="usta-stats">
+            <div class="u-stat"><strong>${u.total_jobs || 0}</strong> ish</div>
+            <div class="u-stat"><span class="stars">${stars}</span> <strong>${u.rating || 0}</strong></div>
+          </div>
+          <div class="usta-price">50 000 so'm/soat</div>
+          <button class="btn-profile">👤 Profilni ko'rish</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterChip(el, specialty) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('filter-specialty').value = specialty;
+  search();
+}
+</script>
+</body>
+</html>
