@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fixly.uz — Kirish / Ro'yxatdan o'tish</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #1a56db; --blue-dark: #1341b0; --green: #3ab246;
+      --gray-bg: #f4f6fb; --gray-text: #6b7280; --dark: #111827; --border: #e5e7eb;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--gray-bg); min-height: 100vh; color: var(--dark); }
+    nav { background: white; box-shadow: 0 1px 8px rgba(0,0,0,0.08); padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { font-size: 22px; font-weight: 800; color: var(--blue); text-decoration: none; }
+    .nav-logo span { color: var(--green); }
+    .container { max-width: 520px; margin: 40px auto; padding: 0 16px; }
+    .tabs { display: flex; background: white; border-radius: 16px 16px 0 0; border-bottom: 2px solid var(--border); overflow: hidden; }
+    .tab { flex: 1; padding: 16px; text-align: center; font-size: 15px; font-weight: 600; color: var(--gray-text); cursor: pointer; border: none; background: transparent; transition: all 0.2s; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+    .tab.active { color: var(--blue); border-bottom-color: var(--blue); background: #f0f5ff; }
+    .card { background: white; border-radius: 0 0 20px 20px; padding: 32px 28px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    .user-type { display: flex; gap: 12px; margin-bottom: 24px; }
+    .type-btn { flex: 1; padding: 14px 10px; border: 2px solid var(--border); border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.2s; background: white; }
+    .type-btn.active { border-color: var(--blue); background: #eff6ff; }
+    .type-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+    .type-name { font-size: 14px; font-weight: 700; color: var(--dark); }
+    .type-desc { font-size: 11px; color: var(--gray-text); margin-top: 2px; }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--dark); }
+    input, select { width: 100%; padding: 13px 16px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-family: 'Inter', sans-serif; color: var(--dark); background: #fafafa; outline: none; transition: border-color 0.2s; }
+    input:focus, select:focus { border-color: var(--blue); background: white; }
+    .phone-input { display: flex; gap: 8px; }
+    .phone-code { width: 90px; flex-shrink: 0; font-weight: 600; }
+    .password-wrap { position: relative; }
+    .password-wrap input { padding-right: 48px; }
+    .eye-btn { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 18px; cursor: pointer; color: var(--gray-text); }
+    .file-upload { border: 2px dashed var(--border); border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafafa; }
+    .file-upload:hover { border-color: var(--blue); background: #eff6ff; }
+    .file-upload input { display: none; }
+    .file-icon { font-size: 32px; margin-bottom: 8px; }
+    .file-text { font-size: 14px; color: var(--gray-text); }
+    .file-text span { color: var(--blue); font-weight: 600; }
+    .file-name { font-size: 13px; color: var(--green); font-weight: 600; margin-top: 8px; display: none; }
+    .usta-fields { display: none; }
+    .usta-fields.show { display: block; }
+    .btn-submit { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: opacity 0.2s; }
+    .btn-submit:hover { opacity: 0.92; }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .section-label { font-size: 12px; font-weight: 700; color: var(--gray-text); text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .switch-text { text-align: center; font-size: 14px; color: var(--gray-text); margin-top: 20px; }
+    .switch-text a { color: var(--blue); font-weight: 600; text-decoration: none; cursor: pointer; }
+    .success-msg { display: none; text-align: center; padding: 32px; }
+    .success-icon { font-size: 64px; margin-bottom: 16px; }
+    .success-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; color: var(--green); }
+    .success-text { color: var(--gray-text); font-size: 15px; line-height: 1.6; }
+    .info-box { background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #92400e; margin-bottom: 18px; }
+    .error-box { background: #fee2e2; border: 1.5px solid #fca5a5; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #991b1b; margin-bottom: 18px; display: none; }
+    @media (max-width: 480px) { .card { padding: 24px 18px; } .container { margin: 20px auto; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">Fix<span>ly</span>.uz</a>
+</nav>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('register')">Ro'yxatdan o'tish</button>
+    <button class="tab" onclick="showTab('login')">Kirish</button>
+  </div>
+
+  <!-- REGISTER -->
+  <div class="card" id="register-card">
+    <div class="user-type">
+      <div class="type-btn active" onclick="selectType('mijoz', this)">
+        <span class="type-icon">👤</span>
+        <div class="type-name">Mijoz</div>
+        <div class="type-desc">Usta qidiraman</div>
+      </div>
+      <div class="type-btn" onclick="selectType('usta', this)">
+        <span class="type-icon">🔧</span>
+        <div class="type-name">Usta</div>
+        <div class="type-desc">Ish topaman</div>
+      </div>
+    </div>
+
+    <div id="form-content">
+      <div class="error-box" id="reg-error"></div>
+      <div class="section-label">Asosiy ma'lumotlar</div>
+      <div class="form-group">
+        <label>To'liq ism</label>
+        <input type="text" placeholder="Ismingiz va familiyangiz" id="fullname"/>
+      </div>
+      <div class="form-group">
+        <label>Telefon raqam</label>
+        <div class="phone-input">
+          <input class="phone-code" value="+998" readonly/>
+          <input type="tel" placeholder="90 123 45 67" id="phone" maxlength="12"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Parol</label>
+        <div class="password-wrap">
+          <input type="password" placeholder="Kamida 6 ta belgi" id="password"/>
+          <button class="eye-btn" onclick="togglePass('password')">👁</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Parolni tasdiqlang</label>
+        <div class="password-wrap">
+          <input type="password" placeholder="Parolni qayta kiriting" id="password2"/>
+          <button class="eye-btn" onclick="togglePass('password2')">👁</button>
+        </div>
+      </div>
+
+      <div class="usta-fields" id="usta-fields">
+        <div class="section-label">Usta ma'lumotlari</div>
+        <div class="form-group">
+          <label>Mutaxassislik</label>
+          <select id="specialty">
+            <option value="">Tanlang...</option>
+            <option>Santexnik</option><option>Elektrik</option>
+            <option>Uy ta'miri</option><option>Qurilish</option>
+            <option>Bo'yoq / Gips</option><option>Plitka</option>
+            <option>Konditsioner ta'miri</option><option>Maishiy texnika ta'miri</option>
+            <option>Mebel yig'ish</option><option>Sartarosh</option>
+            <option>Kosmetolog</option><option>Boshqa</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Hudud (viloyat)</label>
+          <select id="region">
+            <option value="">Tanlang...</option>
+            <option>Toshkent shahri</option><option>Toshkent viloyati</option>
+            <option>Samarqand</option><option>Buxoro</option>
+            <option>Andijon</option><option>Farg'ona</option>
+            <option>Namangan</option><option>Qashqadaryo</option>
+            <option>Surxondaryo</option><option>Jizzax</option>
+            <option>Sirdaryo</option><option>Navoiy</option>
+            <option>Xorazm</option><option>Qoraqalpog'iston</option>
+          </select>
+        </div>
+        <div class="section-label">Hujjat</div>
+        <div class="info-box">⚠️ Pasport yoki ID karta rasmini yuklang. Admin tekshirgach hisobingiz tasdiqlanadi.</div>
+        <div class="form-group">
+          <label>Pasport / ID karta (old tomoni)</label>
+          <div class="file-upload" onclick="document.getElementById('passport-file').click()">
+            <input type="file" id="passport-file" accept="image/*" onchange="showFileName(this, 'passport-name')"/>
+            <div class="file-icon">📄</div>
+            <div class="file-text"><span>Rasm tanlash</span> yoki bu yerga tashlang</div>
+            <div class="file-name" id="passport-name"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Selfie (yuz ko'rinib turgan rasm)</label>
+          <div class="file-upload" onclick="document.getElementById('selfie-file').click()">
+            <input type="file" id="selfie-file" accept="image/*" onchange="showFileName(this, 'selfie-name')"/>
+            <div class="file-icon">🤳</div>
+            <div class="file-text"><span>Rasm tanlash</span> yoki kamera</div>
+            <div class="file-name" id="selfie-name"></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-submit" id="reg-btn" onclick="register()">Ro'yxatdan o'tish</button>
+      <div class="switch-text">Hisobingiz bormi? <a onclick="showTab('login')">Kirish</a></div>
+    </div>
+
+    <div class="success-msg" id="success-msg">
+      <div class="success-icon">🎉</div>
+      <div class="success-title" id="success-title">Muvaffaqiyatli!</div>
+      <p class="success-text" id="success-text"></p>
+      <br/>
+      <button class="btn-submit" onclick="window.location.href='index.html'" style="max-width:200px;margin:0 auto">Bosh sahifaga</button>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="card" id="login-card" style="display:none;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:48px;">👋</div>
+      <div style="font-size:20px;font-weight:800;margin-top:8px;">Xush kelibsiz!</div>
+      <div style="color:var(--gray-text);font-size:14px;margin-top:4px;">Hisobingizga kiring</div>
+    </div>
+    <div class="error-box" id="login-error"></div>
+    <div class="form-group">
+      <label>Telefon raqam</label>
+      <div class="phone-input">
+        <input class="phone-code" value="+998" readonly/>
+        <input type="tel" placeholder="90 123 45 67" id="login-phone" maxlength="12"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Parol</label>
+      <div class="password-wrap">
+        <input type="password" placeholder="Parolingiz" id="login-password"/>
+        <button class="eye-btn" onclick="togglePass('login-password')">👁</button>
+      </div>
+    </div>
+    <button class="btn-submit" id="login-btn" onclick="login()">Kirish</button>
+    <div class="switch-text" style="margin-top:16px;">Hisobingiz yo'qmi? <a onclick="showTab('register')">Ro'yxatdan o'tish</a></div>
+  </div>
+</div>
+
+<script>
+  // Supabase
+  const { createClient } = supabase;
+  const sb = createClient(
+    'https://envyyamptxoqcfovdavm.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudnl5YW1wdHhvcWNmb3ZkYXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTI4NDEsImV4cCI6MjA5NzAyODg0MX0.qB-977hSOnQYizkYCzQxIBBQNqcdxJ-pbpx98yCToMU'
+  );
+
+  let currentType = 'mijoz';
+
+  function showTab(tab) {
+    const reg = document.getElementById('register-card');
+    const log = document.getElementById('login-card');
+    const tabs = document.querySelectorAll('.tab');
+    if (tab === 'register') {
+      reg.style.display = 'block'; log.style.display = 'none';
+      tabs[0].classList.add('active'); tabs[1].classList.remove('active');
+    } else {
+      reg.style.display = 'none'; log.style.display = 'block';
+      tabs[0].classList.remove('active'); tabs[1].classList.add('active');
+    }
+  }
+
+  function selectType(type, el) {
+    currentType = type;
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('usta-fields').classList.toggle('show', type === 'usta');
+  }
+
+  function togglePass(id) {
+    const input = document.getElementById(id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+
+  function showFileName(input, nameId) {
+    const nameEl = document.getElementById(nameId);
+    if (input.files && input.files[0]) {
+      nameEl.textContent = '✅ ' + input.files[0].name;
+      nameEl.style.display = 'block';
+    }
+  }
+
+  function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = '❌ ' + msg;
+    el.style.display = 'block';
+  }
+
+  function hideError(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+
+  async function register() {
+    hideError('reg-error');
+    const name = document.getElementById('fullname').value.trim();
+    const phone = '+998' + document.getElementById('phone').value.trim();
+    const pass = document.getElementById('password').value;
+    const pass2 = document.getElementById('password2').value;
+
+    if (!name) { showError('reg-error', 'Ismingizni kiriting!'); return; }
+    if (phone.length < 13) { showError('reg-error', 'Telefon raqamni to\'g\'ri kiriting!'); return; }
+    if (pass.length < 6) { showError('reg-error', 'Parol kamida 6 ta belgi bo\'lishi kerak!'); return; }
+    if (pass !== pass2) { showError('reg-error', 'Parollar mos kelmaydi!'); return; }
+
+    if (currentType === 'usta') {
+      const specialty = document.getElementById('specialty').value;
+      const region = document.getElementById('region').value;
+      if (!specialty) { showError('reg-error', 'Mutaxassisligingizni tanlang!'); return; }
+      if (!region) { showError('reg-error', 'Hududingizni tanlang!'); return; }
+    }
+
+    const btn = document.getElementById('reg-btn');
+    btn.disabled = true;
+    btn.textContent = 'Yuklanmoqda...';
+
+    try {
+      // Save to users table
+      const { data, error } = await sb.from('users').insert([{
+        full_name: name,
+        phone: phone,
+        role: currentType
+      }]).select();
+
+      if (error) {
+        if (error.code === '23505') {
+          showError('reg-error', 'Bu telefon raqam allaqachon ro\'yxatdan o\'tgan!');
+        } else {
+          showError('reg-error', error.message);
+        }
+        btn.disabled = false;
+        btn.textContent = 'Ro\'yxatdan o\'tish';
+        return;
+      }
+
+      // If usta, save usta data
+      if (currentType === 'usta' && data && data[0]) {
+        const specialty = document.getElementById('specialty').value;
+        const region = document.getElementById('region').value;
+
+        await sb.from('ustalar').insert([{
+          user_id: data[0].id,
+          specialty: specialty,
+          region: region,
+          is_verified: false
+        }]);
+
+        // Telegram ga xabar yuborish
+        const msg = '🔔 YANGI USTA RO\'YXATDAN O\'TDI!\n\n' +
+          '👤 Ism: ' + name + '\n' +
+          '📞 Telefon: ' + phone + '\n' +
+          '🔧 Mutaxassislik: ' + specialty + '\n' +
+          '📍 Hudud: ' + region + '\n\n' +
+          '⚠️ Admin panel da tasdiqlash kerak!\n' +
+          'fixly-uz.vercel.app/admin.html';
+
+        try {
+          await fetch('https://api.telegram.org/bot8816641134:AAH8O9IZGdjgfTyEuCNrWuu4ORW8ULh_Ipk/sendMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: '8309575465', text: msg })
+          });
+        } catch(e) {}
+      }
+
+      // Show success
+      document.getElementById('form-content').style.display = 'none';
+      document.getElementById('success-msg').style.display = 'block';
+      document.getElementById('success-title').textContent = currentType === 'usta' ? 'Ariza yuborildi! ✅' : 'Xush kelibsiz! 🎉';
+      document.getElementById('success-text').textContent = currentType === 'usta'
+        ? name + ', arizangiz qabul qilindi! Admin hujjatingizni tekshirgach hisobingiz tasdiqlanadi.'
+        : name + ', hisobingiz muvaffaqiyatli yaratildi! Endi ustalarni qidirishingiz mumkin.';
+
+    } catch(e) {
+      showError('reg-error', 'Xatolik yuz berdi, qayta urinib ko\'ring!');
+      btn.disabled = false;
+      btn.textContent = 'Ro\'yxatdan o\'tish';
+    }
+  }
+
+  async function login() {
+    hideError('login-error');
+    const phone = '+998' + document.getElementById('login-phone').value.trim();
+    const pass = document.getElementById('login-password').value;
+
+    if (phone.length < 13) { showError('login-error', 'Telefon raqamni kiriting!'); return; }
+    if (!pass) { showError('login-error', 'Parolni kiriting!'); return; }
+
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true;
+    btn.textContent = 'Tekshirilmoqda...';
+
+    try {
+      const { data, error } = await sb.from('users').select('*').eq('phone', phone).single();
+
+      if (error || !data) {
+        showError('login-error', 'Telefon raqam topilmadi!');
+        btn.disabled = false;
+        btn.textContent = 'Kirish';
+        return;
+      }
+
+      localStorage.setItem('fixly_user', JSON.stringify(data));
+      alert('✅ Xush kelibsiz, ' + data.full_name + '!');
+      window.location.href = 'index.html';
+
+    } catch(e) {
+      showError('login-error', 'Xatolik yuz berdi!');
+      btn.disabled = false;
+      btn.textContent = 'Kirish';
+    }
+  }
+</script>
+</body>
+    </html>
