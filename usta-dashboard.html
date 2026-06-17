@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Usta Dashboard — Fixly.uz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #1a56db; --blue-dark: #1341b0; --green: #3ab246;
+      --red: #ef4444; --yellow: #f59e0b;
+      --gray-bg: #f4f6fb; --gray-text: #6b7280; --dark: #111827; --border: #e5e7eb;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--gray-bg); color: var(--dark); min-height: 100vh; }
+
+    /* NAV */
+    nav { background: white; box-shadow: 0 1px 8px rgba(0,0,0,0.08); padding: 0 20px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .nav-logo { font-size: 20px; font-weight: 800; color: var(--blue); text-decoration: none; }
+    .nav-logo span { color: var(--green); }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .nav-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--green)); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: white; }
+    .nav-name { font-size: 14px; font-weight: 600; }
+
+    /* BOTTOM NAV */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); display: flex; z-index: 100; }
+    .bn-item { flex: 1; padding: 10px 0; text-align: center; cursor: pointer; transition: all 0.2s; color: var(--gray-text); }
+    .bn-item.active { color: var(--blue); }
+    .bn-icon { font-size: 22px; display: block; }
+    .bn-label { font-size: 11px; font-weight: 600; margin-top: 2px; }
+
+    /* MAIN */
+    .main { padding: 20px 16px 80px; max-width: 600px; margin: 0 auto; }
+
+    /* SECTIONS */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* CARDS */
+    .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 14px; }
+    .card-title { font-size: 16px; font-weight: 800; margin-bottom: 16px; }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .stat-card { background: white; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; }
+    .stat-icon { font-size: 24px; margin-bottom: 6px; }
+    .stat-num { font-size: 24px; font-weight: 800; }
+    .stat-label { font-size: 12px; color: var(--gray-text); margin-top: 2px; }
+
+    /* STATUS TOGGLE */
+    .status-toggle { display: flex; align-items: center; justify-content: space-between; background: white; border-radius: 14px; padding: 16px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 14px; }
+    .toggle-left { display: flex; align-items: center; gap: 10px; }
+    .toggle-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+    .toggle-dot.offline { background: #e5e7eb; animation: none; }
+    .toggle-text { font-size: 15px; font-weight: 700; }
+    .toggle-sub { font-size: 12px; color: var(--gray-text); }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .switch { position: relative; width: 52px; height: 28px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #e5e7eb; border-radius: 28px; transition: 0.3s; }
+    .slider:before { position: absolute; content: ''; height: 22px; width: 22px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+    input:checked + .slider { background: var(--green); }
+    input:checked + .slider:before { transform: translateX(24px); }
+
+    /* BUYURTMA CARD */
+    .order-card { border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; transition: all 0.2s; }
+    .order-card:hover { border-color: var(--blue); }
+    .order-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+    .order-num { font-size: 13px; font-weight: 700; color: var(--blue); }
+    .order-time { font-size: 12px; color: var(--gray-text); }
+    .order-problem { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .order-details { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .order-tag { background: var(--gray-bg); border-radius: 8px; padding: 4px 10px; font-size: 12px; color: var(--gray-text); font-weight: 600; }
+    .order-tag span { color: var(--dark); }
+    .order-btns { display: flex; gap: 10px; }
+    .btn-accept { flex: 1; padding: 10px; background: var(--green); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-decline { flex: 1; padding: 10px; background: white; color: var(--red); border: 2px solid var(--red); border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-done { width: 100%; padding: 10px; background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+    /* STATUS BADGE */
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-active { background: #dbeafe; color: #1e40af; }
+    .badge-done { background: #d1fae5; color: #065f46; }
+    .badge-declined { background: #fee2e2; color: #991b1b; }
+
+    /* PROFILE */
+    .profile-header { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); border-radius: 20px; padding: 24px; color: white; text-align: center; margin-bottom: 16px; }
+    .profile-avatar { width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: white; margin: 0 auto 12px; border: 3px solid rgba(255,255,255,0.3); }
+    .profile-name { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+    .profile-job { font-size: 14px; opacity: 0.8; }
+    .profile-stats { display: flex; justify-content: center; gap: 32px; margin-top: 16px; }
+    .p-stat-num { font-size: 22px; font-weight: 800; }
+    .p-stat-label { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-family: 'Inter', sans-serif; outline: none; background: #fafafa; }
+    .form-group input:focus, .form-group select:focus { border-color: var(--blue); background: white; }
+    .form-group textarea { resize: none; min-height: 80px; }
+
+    .btn-save { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+    /* EMPTY */
+    .empty { text-align: center; padding: 48px 20px; color: var(--gray-text); }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-text { font-size: 15px; font-weight: 600; }
+    .empty-sub { font-size: 13px; margin-top: 4px; }
+
+    /* LOGIN */
+    .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(135deg, #1a56db, #1341b0); }
+    .login-card { background: white; border-radius: 24px; padding: 32px 24px; width: 100%; max-width: 380px; }
+    .login-title { font-size: 22px; font-weight: 800; text-align: center; margin-bottom: 4px; }
+    .login-sub { text-align: center; color: var(--gray-text); font-size: 14px; margin-bottom: 24px; }
+    .login-icon { text-align: center; font-size: 52px; margin-bottom: 16px; }
+    .btn-login { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+    .login-link { text-align: center; font-size: 14px; color: var(--gray-text); margin-top: 16px; }
+    .login-link a { color: var(--blue); font-weight: 600; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-icon">🔧</div>
+    <div class="login-title">Usta kirish</div>
+    <div class="login-sub">Fixly.uz usta paneli</div>
+    <div class="form-group">
+      <label>Telefon raqam</label>
+      <div style="display:flex;gap:8px;">
+        <input value="+998" readonly style="width:80px;flex-shrink:0;font-weight:600;"/>
+        <input type="tel" id="login-phone" placeholder="90 123 45 67" maxlength="12"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Parol</label>
+      <input type="password" id="login-pass" placeholder="Parolingiz"/>
+    </div>
+    <div style="background:#fee2e2;border-radius:10px;padding:12px;font-size:13px;color:#991b1b;margin-bottom:16px;display:none;" id="login-error"></div>
+    <button class="btn-login" id="login-btn">Kirish</button>
+    <div class="login-link">Hisobingiz yo'qmi? <a href="auth.html">Ro'yxatdan o'tish</a></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none;">
+  <nav>
+    <a href="index.html" class="nav-logo">Fix<span>ly</span>.uz</a>
+    <div class="nav-right">
+      <div class="nav-name" id="nav-name">Usta</div>
+      <div class="nav-avatar" id="nav-avatar">U</div>
+    </div>
+  </nav>
+
+  <div class="main">
+
+    <!-- HOME -->
+    <div class="section active" id="sec-home">
+      <!-- Status toggle -->
+      <div class="status-toggle">
+        <div class="toggle-left">
+          <div class="toggle-dot" id="status-dot"></div>
+          <div>
+            <div class="toggle-text" id="status-text">Online — buyurtma qabul qilaman</div>
+            <div class="toggle-sub">Holatni o'zgartirish uchun bosing</div>
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="status-toggle" checked onchange="toggleStatus()"/>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📋</div>
+          <div class="stat-num" id="stat-total">0</div>
+          <div class="stat-label">Jami buyurtma</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">✅</div>
+          <div class="stat-num" id="stat-done">0</div>
+          <div class="stat-label">Bajarilgan</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⭐</div>
+          <div class="stat-num" id="stat-rating">0</div>
+          <div class="stat-label">Reyting</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-num" id="stat-pending">0</div>
+          <div class="stat-label">Kutmoqda</div>
+        </div>
+      </div>
+
+      <!-- Yangi buyurtmalar -->
+      <div class="card">
+        <div class="card-title">🔔 Yangi buyurtmalar</div>
+        <div id="new-orders">
+          <div class="empty">
+            <div class="empty-icon">📭</div>
+            <div class="empty-text">Yangi buyurtma yo'q</div>
+            <div class="empty-sub">Online bo'lsangiz buyurtmalar keladi</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUYURTMALAR -->
+    <div class="section" id="sec-orders">
+      <div class="card">
+        <div class="card-title">📋 Barcha buyurtmalar</div>
+        <div id="all-orders">
+          <div class="empty">
+            <div class="empty-icon">📋</div>
+            <div class="empty-text">Buyurtma yo'q</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFIL -->
+    <div class="section" id="sec-profile">
+      <div class="profile-header">
+        <div class="profile-avatar" id="profile-avatar">U</div>
+        <div class="profile-name" id="profile-name">Usta</div>
+        <div class="profile-job" id="profile-job">Mutaxassislik</div>
+        <div class="profile-stats">
+          <div>
+            <div class="p-stat-num" id="ps-jobs">0</div>
+            <div class="p-stat-label">Ish</div>
+          </div>
+          <div>
+            <div class="p-stat-num" id="ps-rating">0</div>
+            <div class="p-stat-label">Reyting</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">✏️ Profilni tahrirlash</div>
+        <div class="form-group">
+          <label>To'liq ism</label>
+          <input type="text" id="edit-name" placeholder="Ismingiz"/>
+        </div>
+        <div class="form-group">
+          <label>Mutaxassislik</label>
+          <select id="edit-specialty">
+            <option>Santexnik</option><option>Elektrik</option>
+            <option>Uy ta'miri</option><option>Qurilish</option>
+            <option>Bo'yoq / Gips</option><option>Plitka</option>
+            <option>Konditsioner</option><option>Maishiy texnika</option>
+            <option>Mebel yig'ish</option><option>Sartarosh</option>
+            <option>Kosmetolog</option><option>Boshqa</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Hudud</label>
+          <select id="edit-region">
+            <option>Toshkent shahri</option><option>Toshkent viloyati</option>
+            <option>Samarqand</option><option>Buxoro</option>
+            <option>Andijon</option><option>Farg'ona</option>
+            <option>Namangan</option><option>Jizzax</option>
+            <option>Qashqadaryo</option><option>Surxondaryo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>O'zim haqimda</label>
+          <textarea id="edit-about" placeholder="Tajriba, ko'nikmalar haqida..."></textarea>
+        </div>
+        <button class="btn-save" onclick="saveProfile()">💾 Saqlash</button>
+      </div>
+
+      <button onclick="logout()" style="width:100%;padding:14px;background:white;color:var(--red);border:2px solid var(--red);border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;">🚪 Chiqish</button>
+
+      <button onclick="deleteAccount()" style="width:100%;padding:14px;background:#fee2e2;color:#991b1b;border:2px solid #fca5a5;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;">🗑 Hisobni o'chirish</button>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="bn-item active" onclick="showSection('home', this)">
+      <span class="bn-icon">🏠</span>
+      <div class="bn-label">Asosiy</div>
+    </div>
+    <div class="bn-item" onclick="showSection('orders', this)">
+      <span class="bn-icon">📋</span>
+      <div class="bn-label">Buyurtmalar</div>
+    </div>
+    <div class="bn-item" onclick="showSection('profile', this)">
+      <span class="bn-icon">👤</span>
+      <div class="bn-label">Profil</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://envyyamptxoqcfovdavm.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudnl5YW1wdHhvcWNmb3ZkYXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTI4NDEsImV4cCI6MjA5NzAyODg0MX0.qB-977hSOnQYizkYCzQxIBBQNqcdxJ-pbpx98yCToMU'
+);
+
+let currentUser = null;
+let isOnline = true;
+
+// LOGIN
+document.getElementById('login-btn').addEventListener('click', async function() {
+  const phone = '+998' + document.getElementById('login-phone').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+
+  if (phone.length < 13 || !pass) {
+    errEl.textContent = 'Telefon va parolni kiriting!';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const { data, error } = await sb.from('users').select('*').eq('phone', phone).single();
+
+  if (error || !data) {
+    errEl.textContent = '❌ Telefon raqam topilmadi!';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  if (data.role !== 'usta') {
+    errEl.textContent = '❌ Bu sahifa faqat ustalar uchun!';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  currentUser = data;
+  localStorage.setItem('fixly_usta', JSON.stringify(data));
+  showDashboard();
+});
+
+document.getElementById('login-pass').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('login-btn').click();
+});
+
+function showDashboard() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  const name = currentUser.full_name;
+  const initial = name ? name[0].toUpperCase() : 'U';
+
+  document.getElementById('nav-name').textContent = name;
+  document.getElementById('nav-avatar').textContent = initial;
+  document.getElementById('profile-avatar').textContent = initial;
+  document.getElementById('profile-name').textContent = name;
+  document.getElementById('edit-name').value = name;
+
+  loadOrders();
+}
+
+async function loadOrders() {
+  const { data: buyurtmalar } = await sb.from('buyurtmalar').select('*').order('created_at', { ascending: false });
+
+  if (!buyurtmalar) return;
+
+  const pending = buyurtmalar.filter(b => b.status === 'pending');
+  const done = buyurtmalar.filter(b => b.status === 'done');
+
+  document.getElementById('stat-total').textContent = buyurtmalar.length;
+  document.getElementById('stat-done').textContent = done.length;
+  document.getElementById('stat-pending').textContent = pending.length;
+  document.getElementById('stat-rating').textContent = '4.9';
+  document.getElementById('ps-jobs').textContent = done.length;
+  document.getElementById('ps-rating').textContent = '4.9';
+
+  // Yangi buyurtmalar
+  const newOrdersEl = document.getElementById('new-orders');
+  if (pending.length > 0) {
+    newOrdersEl.innerHTML = pending.map(b => orderCard(b, true)).join('');
+  } else {
+    newOrdersEl.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Yangi buyurtma yo'q</div></div>`;
+  }
+
+  // Barcha buyurtmalar
+  const allOrdersEl = document.getElementById('all-orders');
+  if (buyurtmalar.length > 0) {
+    allOrdersEl.innerHTML = buyurtmalar.map(b => orderCard(b, false)).join('');
+  } else {
+    allOrdersEl.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Buyurtma yo'q</div></div>`;
+  }
+}
+
+function orderCard(b, showBtns) {
+  const statusMap = {
+    pending: '<span class="badge badge-pending">⏳ Kutmoqda</span>',
+    active: '<span class="badge badge-active">🔧 Bajarilmoqda</span>',
+    done: '<span class="badge badge-done">✅ Bajarildi</span>',
+    declined: '<span class="badge badge-declined">❌ Rad etildi</span>',
+  };
+
+  const btns = showBtns && b.status === 'pending' ? `
+    <div class="order-btns">
+      <button class="btn-accept" onclick="acceptOrder('${b.id}')">✅ Qabul qilish</button>
+      <button class="btn-decline" onclick="declineOrder('${b.id}')">❌ Rad etish</button>
+    </div>
+  ` : b.status === 'active' ? `
+    <button class="btn-done" onclick="doneOrder('${b.id}')">✅ Ish tugadi</button>
+  ` : '';
+
+  return `
+    <div class="order-card" id="order-${b.id}">
+      <div class="order-top">
+        <div>
+          <div class="order-num">#FX-${b.id.slice(0,4).toUpperCase()}</div>
+          <div class="order-time">${new Date(b.created_at).toLocaleDateString()}</div>
+        </div>
+        ${statusMap[b.status] || statusMap
