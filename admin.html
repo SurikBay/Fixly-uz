@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel — Fixly.uz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --blue: #1a56db; --blue-dark: #1341b0; --green: #3ab246; --red: #ef4444; --yellow: #f59e0b; --gray-bg: #f4f6fb; --gray-text: #6b7280; --dark: #111827; --border: #e5e7eb; }
+    body { font-family: 'Inter', sans-serif; background: var(--gray-bg); color: var(--dark); min-height: 100vh; }
+
+    /* LOGIN */
+    #login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(135deg, #1a56db, #1341b0); }
+    .login-card { background: white; border-radius: 24px; padding: 40px 32px; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .admin-icon { text-align: center; font-size: 56px; margin-bottom: 16px; }
+    .login-logo { text-align: center; font-size: 28px; font-weight: 800; color: var(--blue); margin-bottom: 4px; }
+    .login-logo span { color: var(--green); }
+    .login-sub { text-align: center; color: var(--gray-text); font-size: 14px; margin-bottom: 32px; }
+    .fg { margin-bottom: 16px; }
+    .fg label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .fg input { width: 100%; padding: 13px 16px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-family: 'Inter', sans-serif; outline: none; }
+    .fg input:focus { border-color: var(--blue); }
+    .btn-login { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+    .login-hint { text-align: center; font-size: 12px; color: var(--gray-text); margin-top: 16px; }
+
+    /* PANEL */
+    #admin-panel { display: none; }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 220px; background: var(--dark); padding: 24px 0; flex-shrink: 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; z-index: 100; }
+    .sidebar-logo { font-size: 20px; font-weight: 800; color: white; padding: 0 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 16px; }
+    .sidebar-logo span { color: var(--green); }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 14px; font-weight: 500; border-left: 3px solid transparent; transition: all 0.2s; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+    .nav-item.active { background: rgba(26,86,219,0.3); color: white; border-left-color: var(--blue); }
+    .badge-count { margin-left: auto; background: var(--red); color: white; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+    .main { margin-left: 220px; padding: 24px; flex: 1; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .page-title { font-size: 22px; font-weight: 800; }
+    .page-sub { font-size: 14px; color: var(--gray-text); margin-top: 2px; }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .stat-icon { font-size: 28px; margin-bottom: 10px; }
+    .stat-num { font-size: 28px; font-weight: 800; }
+    .stat-label { font-size: 13px; color: var(--gray-text); margin-top: 4px; }
+
+    /* SECTIONS */
+    .section { display: none; }
+    .section.active { display: block; }
+    .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px; }
+    .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+    /* TABLE */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 10px 12px; font-size: 12px; color: var(--gray-text); font-weight: 600; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    td { padding: 12px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+
+    /* STATUS */
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-approved { background: #d1fae5; color: #065f46; }
+
+    /* USTA CARD */
+    .usta-card { border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+    .usta-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .usta-av { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--green)); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: white; flex-shrink: 0; }
+    .usta-name { font-size: 15px; font-weight: 700; }
+    .usta-info { font-size: 13px; color: var(--gray-text); margin-top: 2px; }
+    .action-btns { display: flex; gap: 10px; margin-top: 12px; }
+    .btn-approve { flex: 1; padding: 10px; background: var(--green); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-reject { flex: 1; padding: 10px; background: white; color: var(--red); border: 2px solid var(--red); border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .img-toggle { background: #eff6ff; color: var(--blue); border: none; border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 600; cursor: pointer; margin-left: 8px; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="admin-icon">🔐</div>
+    <div class="login-logo">Fix<span>ly</span>.uz</div>
+    <div class="login-sub">Admin Panel</div>
+    <div class="fg"><label>Login</label><input type="text" id="li" placeholder="admin"/></div>
+    <div class="fg"><label>Parol</label><input type="password" id="lp" placeholder="••••••••"/></div>
+    <button class="btn-login" id="lb">Kirish</button>
+    <div class="login-hint">Login: admin | Parol: fixly2025</div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-logo">Fix<span>ly</span> Admin</div>
+      <div class="nav-item active" onclick="showSec('dashboard',this)">📊 Dashboard</div>
+      <div class="nav-item" onclick="showSec('pending',this)">⏳ Kutayotganlar <span class="badge-count" id="pc">0</span></div>
+      <div class="nav-item" onclick="showSec('ustalar',this)">🔧 Ustalar</div>
+      <div class="nav-item" onclick="showSec('mijozlar',this)">👤 Mijozlar</div>
+      <div class="nav-item" onclick="showSec('buyurtmalar',this)">📋 Buyurtmalar</div>
+      <div class="nav-item" onclick="doLogout()" style="color:#ef4444;margin-top:20px;">🚪 Chiqish</div>
+    </div>
+
+    <div class="main">
+      <div class="topbar">
+        <div><div class="page-title" id="pt">Dashboard</div><div class="page-sub" id="ps">Umumiy ko'rinish</div></div>
+        <div style="background:white;padding:8px 16px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,0.08);">👨‍💼 Admin</div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="section active" id="sec-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-icon">🔧</div><div class="stat-num" id="su">0</div><div class="stat-label">Jami ustalar</div></div>
+          <div class="stat-card"><div class="stat-icon">👤</div><div class="stat-num" id="sm">0</div><div class="stat-label">Jami mijozlar</div></div>
+          <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-num" id="sb2">0</div><div class="stat-label">Buyurtmalar</div></div>
+          <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-num" id="sp" style="color:#f59e0b;">0</div><div class="stat-label">Kutayotganlar</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">So'nggi buyurtmalar</div>
+          <div class="table-wrap"><table><thead><tr><th>Muammo</th><th>Manzil</th><th>Telefon</th><th>Holat</th><th>Sana</th></tr></thead><tbody id="dt"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- PENDING -->
+      <div class="section" id="sec-pending">
+        <div id="pl"><div class="card"><div style="text-align:center;padding:40px;color:var(--gray-text);">⏳ Yuklanmoqda...</div></div></div>
+      </div>
+
+      <!-- USTALAR -->
+      <div class="section" id="sec-ustalar">
+        <div class="card"><div class="card-title">Barcha ustalar</div>
+        <div class="table-wrap"><table><thead><tr><th>Ism</th><th>Mutaxassislik</th><th>Hudud</th><th>Holat</th></tr></thead><tbody id="ut"></tbody></table></div></div>
+      </div>
+
+      <!-- MIJOZLAR -->
+      <div class="section" id="sec-mijozlar">
+        <div class="card"><div class="card-title">Barcha mijozlar</div>
+        <div class="table-wrap"><table><thead><tr><th>Ism</th><th>Telefon</th><th>Sana</th></tr></thead><tbody id="mt"></tbody></table></div></div>
+      </div>
+
+      <!-- BUYURTMALAR -->
+      <div class="section" id="sec-buyurtmalar">
+        <div class="card"><div class="card-title">Barcha buyurtmalar</div>
+        <div class="table-wrap"><table><thead><tr><th>Muammo</th><th>Manzil</th><th>Telefon</th><th>Holat</th><th>Sana</th></tr></thead><tbody id="bt"></tbody></table></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://envyyamptxoqcfovdavm.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudnl5YW1wdHhvcWNmb3ZkYXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTI4NDEsImV4cCI6MjA5NzAyODg0MX0.qB-977hSOnQYizkYCzQxIBBQNqcdxJ-pbpx98yCToMU'
+);
+
+document.getElementById('lb').onclick = function() {
+  var l = document.getElementById('li').value;
+  var p = document.getElementById('lp').value;
+  if (l === 'admin' && p === 'fixly2025') {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    loadAll();
+  } else {
+    alert('Login yoki parol noto\'g\'ri!');
+  }
+};
+
+document.getElementById('lp').onkeydown = function(e) {
+  if (e.key === 'Enter') document.getElementById('lb').click();
+};
+
+function doLogout() {
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('li').value = '';
+  document.getElementById('lp').value = '';
+}
+
+var titles = {
+  dashboard: ['Dashboard', 'Umumiy ko\'rinish'],
+  pending: ['Kutayotgan ustalar', 'Tasdiqlash kerak'],
+  ustalar: ['Ustalar', 'Barcha ustalar'],
+  mijozlar: ['Mijozlar', 'Barcha mijozlar'],
+  buyurtmalar: ['Buyurtmalar', 'Barcha buyurtmalar'],
+};
+
+function showSec(name, el) {
+  document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+  document.getElementById('sec-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  document.getElementById('pt').textContent = titles[name][0];
+  document.getElementById('ps').textContent = titles[name][1];
+}
+
+function toggleImg(id) {
+  var img = document.getElementById(id);
+  if (img) img.style.display = img.style.display === 'none' ? 'block' : 'none';
+}
+
+async function loadAll() {
+  var r1 = await sb.from('users').select('*');
+  var r2 = await sb.from('ustalar').select('*');
+  var r3 = await sb.from('buyurtmalar').select('*');
+
+  var users = r1.data || [];
+  var ustalar = r2.data || [];
+  var buyurtmalar = r3.data || [];
+  var mijozlar = users.filter(function(u) { return u.role === 'mijoz'; });
+  var pending = ustalar.filter(function(u) { return !u.is_verified; });
+
+  document.getElementById('su').textContent = ustalar.length;
+  document.getElementById('sm').textContent = mijozlar.length;
+  document.getElementById('sb2').textContent = buyurtmalar.length;
+  document.getElementById('sp').textContent = pending.length;
+  document.getElementById('pc').textContent = pending.length;
+
+  // Dashboard
+  var dt = document.getElementById('dt');
+  dt.innerHTML = buyurtmalar.slice(0,5).map(function(b) {
+    return '<tr><td>' + (b.problem||'-') + '</td><td>' + (b.address||'-') + '</td><td>' + (b.phone||'-') + '</td><td><span class="badge badge-pending">⏳ Kutmoqda</span></td><td>' + new Date(b.created_at).toLocaleDateString() + '</td></tr>';
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-text);">Buyurtma yo\'q</td></tr>';
+
+  // Pending
+  var pl = document.getElementById('pl');
+  if (pending.length > 0) {
+    pl.innerHTML = pending.map(function(u) {
+      var user = users.find(function(us) { return us.id === u.user_id; });
+      var name = user ? user.full_name : 'Noma\'lum';
+      var phone = user ? user.phone : '-';
+      var pid = 'p' + u.id.replace(/-/g,'');
+      var sid = 's' + u.id.replace(/-/g,'');
+      return '<div class="usta-card">' +
+        '<div class="usta-top"><div class="usta-av">' + name[0].toUpperCase() + '</div>' +
+        '<div><div class="usta-name">' + name + '</div><div class="usta-info">' + (u.specialty||'-') + ' • ' + (u.region||'-') + ' • ' + phone + '</div></div>' +
+        '<span class="badge badge-pending" style="margin-left:auto;">⏳ Kutmoqda</span></div>' +
+        '<div style="margin-bottom:10px;font-size:13px;font-weight:700;">🪪 Pasport: <button class="img-toggle" onclick="toggleImg(\'' + pid + '\')">Ko\'rish 👁</button></div>' +
+        (u.passport_url ? '<img id="' + pid + '" src="' + u.passport_url + '" style="display:none;width:100%;border-radius:10px;margin-bottom:10px;cursor:pointer;" onclick="window.open(\'' + u.passport_url + '\')" />' : '<div style="color:#6b7280;font-size:13px;margin-bottom:10px;">Yuklanmagan</div>') +
+        '<div style="margin-bottom:10px;font-size:13px;font-weight:700;">🤳 Selfie: <button class="img-toggle" onclick="toggleImg(\'' + sid + '\')">Ko\'rish 👁</button></div>' +
+        (u.selfie_url ? '<img id="' + sid + '" src="' + u.selfie_url + '" style="display:none;width:100%;border-radius:10px;margin-bottom:10px;cursor:pointer;" onclick="window.open(\'' + u.selfie_url + '\')" />' : '<div style="color:#6b7280;font-size:13px;margin-bottom:10px;">Yuklanmagan</div>') +
+        '<div class="action-btns">' +
+        '<button class="btn-approve" onclick="approve(\'' + u.id + '\',\'' + name + '\')">✅ Tasdiqlash</button>' +
+        '<button class="btn-reject" onclick="reject(\'' + u.id + '\',\'' + name + '\')">❌ Rad etish</button>' +
+        '</div></div>';
+    }).join('');
+  } else {
+    pl.innerHTML = '<div class="card"><div style="text-align:center;padding:40px;color:var(--gray-text);"><div style="font-size:48px;">✅</div><div style="font-weight:700;">Kutayotgan usta yo\'q</div></div></div>';
+  }
+
+  // Ustalar
+  var ut = document.getElementById('ut');
+  ut.innerHTML = ustalar.map(function(u) {
+    var user = users.find(function(us) { return us.id === u.user_id; });
+    var name = user ? user.full_name : '-';
+    return '<tr><td>' + name + '</td><td>' + (u.specialty||'-') + '</td><td>' + (u.region||'-') + '</td><td><span class="badge ' + (u.is_verified ? 'badge-approved' : 'badge-pending') + '">' + (u.is_verified ? '✅ Faol' : '⏳ Kutmoqda') + '</span></td></tr>';
+  }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--gray-text);">Usta yo\'q</td></tr>';
+
+  // Mijozlar
+  var mt = document.getElementById('mt');
+  mt.innerHTML = mijozlar.map(function(u) {
+    return '<tr><td>' + u.full_name + '</td><td>' + u.phone + '</td><td>' + new Date(u.created_at).toLocaleDateString() + '</td></tr>';
+  }).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--gray-text);">Mijoz yo\'q</td></tr>';
+
+  // Buyurtmalar
+  var bt = document.getElementById('bt');
+  bt.innerHTML = buyurtmalar.map(function(b) {
+    return '<tr><td>' + (b.problem||'-') + '</td><td>' + (b.address||'-') + '</td><td>' + (b.phone||'-') + '</td><td><span class="badge badge-pending">⏳</span></td><td>' + new Date(b.created_at).toLocaleDateString() + '</td></tr>';
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-text);">Buyurtma yo\'q</td></tr>';
+}
+
+async function approve(id, name) {
+  await sb.from('ustalar').update({ is_verified: true }).eq('id', id);
+  alert(name + ' tasdiqlandi! ✅');
+  loadAll();
+}
+
+async function reject(id, name) {
+  var reason = prompt(name + ' ni rad etish sababi:');
+  if (reason !== null) {
+    await sb.from('ustalar').delete().eq('id', id);
+    alert('Rad etildi!');
+    loadAll();
+  }
+}
+</script>
+</body>
+                                                                                                                                                           </html>
