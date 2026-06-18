@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat — Fixly.uz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --blue: #1a56db; --green: #3ab246; --gray-bg: #f0f2f5; --gray-text: #6b7280; --dark: #111827; --border: #e5e7eb; }
+    body { font-family: 'Inter', sans-serif; background: var(--gray-bg); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* NAV */
+    .chat-nav { background: white; padding: 10px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+    .back-btn { color: var(--blue); text-decoration: none; font-size: 20px; font-weight: 700; padding: 4px 8px; }
+    .chat-av { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--green)); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: white; flex-shrink: 0; }
+    .chat-info { flex: 1; }
+    .chat-name { font-size: 15px; font-weight: 700; }
+    .chat-status { font-size: 12px; color: var(--gray-text); }
+
+    /* MESSAGES */
+    .messages { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+
+    .msg-wrap { display: flex; flex-direction: column; max-width: 78%; }
+    .mine { align-self: flex-end; align-items: flex-end; }
+    .theirs { align-self: flex-start; align-items: flex-start; }
+
+    .msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; word-break: break-word; max-width: 100%; }
+    .mine .msg-bubble { background: var(--blue); color: white; border-bottom-right-radius: 4px; }
+    .theirs .msg-bubble { background: white; color: var(--dark); border-bottom-left-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+    .msg-time { font-size: 11px; color: var(--gray-text); margin-top: 3px; }
+    .msg-sender { font-size: 11px; color: var(--gray-text); font-weight: 600; margin-bottom: 3px; }
+
+    .empty-chat { text-align: center; margin: auto; padding: 40px 20px; color: var(--gray-text); }
+    .empty-icon { font-size: 48px; margin-bottom: 10px; }
+
+    /* INPUT */
+    .input-area { background: white; border-top: 1px solid var(--border); padding: 8px 12px; flex-shrink: 0; }
+    .quick-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
+    .quick-row::-webkit-scrollbar { display: none; }
+    .qbtn { white-space: nowrap; padding: 5px 12px; background: #eff6ff; color: var(--blue); border: 1px solid #bfdbfe; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; font-family: 'Inter', sans-serif; }
+    .qbtn:active { background: var(--blue); color: white; }
+
+    .input-row { display: flex; align-items: flex-end; gap: 8px; margin-top: 6px; }
+    .msg-in { flex: 1; border: 1.5px solid var(--border); border-radius: 20px; padding: 10px 14px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; resize: none; max-height: 100px; line-height: 1.5; background: #fafafa; }
+    .msg-in:focus { border-color: var(--blue); background: white; }
+    .send-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--blue); color: white; border: none; font-size: 18px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .send-btn:active { background: #1341b0; }
+  </style>
+</head>
+<body>
+
+<div class="chat-nav">
+  <a href="javascript:history.back()" class="back-btn">←</a>
+  <div class="chat-av" id="other-av">U</div>
+  <div class="chat-info">
+    <div class="chat-name" id="other-name">Chat</div>
+    <div class="chat-status" id="chat-st">Fixly.uz</div>
+  </div>
+</div>
+
+<div class="messages" id="msgs">
+  <div class="empty-chat" id="empty">
+    <div class="empty-icon">💬</div>
+    <div style="font-weight:700;font-size:15px;">Xabarlar yo'q</div>
+    <div style="font-size:13px;margin-top:4px;">Birinchi xabarni yuboring!</div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="quick-row">
+    <button class="qbtn" id="q1">Salom! 👋</button>
+    <button class="qbtn" id="q2">Rahmat!</button>
+    <button class="qbtn" id="q3">Qachon kelasiz?</button>
+    <button class="qbtn" id="q4">Tushunarli ✅</button>
+    <button class="qbtn" id="q5">Narx qancha?</button>
+  </div>
+  <div class="input-row">
+    <textarea class="msg-in" id="msg-in" placeholder="Xabar yozing..." rows="1"></textarea>
+    <button class="send-btn" id="send-btn">➤</button>
+  </div>
+</div>
+
+<script>
+var SUPABASE_URL = 'https://envyyamptxoqcfovdavm.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudnl5YW1wdHhvcWNmb3ZkYXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTI4NDEsImV4cCI6MjA5NzAyODg0MX0.qB-977hSOnQYizkYCzQxIBBQNqcdxJ-pbpx98yCToMU';
+
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+var currentUser = null;
+var buyurtmaId = 'fixly-general-chat';
+var pollTimer = null;
+
+// Foydalanuvchini olish
+function getUser() {
+  var keys = ['fixly_user', 'fixly_mijoz', 'fixly_usta'];
+  for (var i = 0; i < keys.length; i++) {
+    var val = localStorage.getItem(keys[i]);
+    if (val) {
+      try { return JSON.parse(val); } catch(e) {}
+    }
+  }
+  return null;
+}
+
+// Vaqt formati
+function timeStr() {
+  var d = new Date();
+  return ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
+}
+
+// Xabar qo'shish
+function addMsg(text, isMine, senderName, time) {
+  var container = document.getElementById('msgs');
+  document.getElementById('empty').style.display = 'none';
+
+  var wrap = document.createElement('div');
+  wrap.className = 'msg-wrap ' + (isMine ? 'mine' : 'theirs');
+
+  if (!isMine && senderName) {
+    var sn = document.createElement('div');
+    sn.className = 'msg-sender';
+    sn.textContent = senderName;
+    wrap.appendChild(sn);
+  }
+
+  var bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+
+  var t = document.createElement('div');
+  t.className = 'msg-time';
+  t.textContent = time || timeStr();
+  wrap.appendChild(t);
+
+  container.appendChild(wrap);
+  container.scrollTop = container.scrollHeight;
+}
+
+// Xabarlarni yuklash
+var lastCount = 0;
+async function loadMsgs() {
+  try {
+    var res = await sb.from('messages').select('*').eq('buyurtma_id', buyurtmaId).order('created_at', {ascending: true});
+    var msgs = res.data || [];
+
+    if (msgs.length === lastCount) return;
+    lastCount = msgs.length;
+
+    var container = document.getElementById('msgs');
+    // Faqat yangilarini qo'shish
+    var existing = container.querySelectorAll('[data-id]');
+    var existingIds = new Set(Array.from(existing).map(function(el) { return el.getAttribute('data-id'); }));
+
+    msgs.forEach(function(msg) {
+      if (existingIds.has(msg.id)) return;
+      document.getElementById('empty').style.display = 'none';
+      var isMine = currentUser && msg.sender_id === currentUser.id;
+
+      var wrap = document.createElement('div');
+      wrap.className = 'msg-wrap ' + (isMine ? 'mine' : 'theirs');
+      wrap.setAttribute('data-id', msg.id);
+
+      if (!isMine) {
+        var sn = document.createElement('div');
+        sn.className = 'msg-sender';
+        sn.textContent = msg.sender_name || 'Foydalanuvchi';
+        wrap.appendChild(sn);
+
+        // Other user nomini yangilash
+        document.getElementById('other-name').textContent = msg.sender_name || 'Chat';
+        document.getElementById('other-av').textContent = (msg.sender_name || 'U')[0].toUpperCase();
+      }
+
+      var bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+      bubble.textContent = msg.text;
+      wrap.appendChild(bubble);
+
+      var d = new Date(msg.created_at);
+      var t = document.createElement('div');
+      t.className = 'msg-time';
+      t.textContent = ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
+      wrap.appendChild(t);
+
+      container.appendChild(wrap);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  } catch(e) {
+    console.log('Load error:', e);
+  }
+}
+
+// Xabar yuborish
+async function send() {
+  if (!currentUser) {
+    alert('Avval kirish kerak!');
+    window.location.href = 'auth.html';
+    return;
+  }
+
+  var input = document.getElementById('msg-in');
+  var text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  // UI ga darhol qo'shish
+  addMsg(text, true, null, timeStr());
+
+  try {
+    await sb.from('messages').insert([{
+      buyurtma_id: buyurtmaId,
+      sender_id: currentUser.id,
+      sender_name: currentUser.full_name || 'Foydalanuvchi',
+      text: text
+    }]);
+    lastCount++;
+  } catch(e) {
+    console.log('Send error:', e);
+  }
+}
+
+// Tugmalar
+document.getElementById('send-btn').onclick = send;
+
+document.getElementById('msg-in').onkeydown = function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    send();
+  }
+};
+
+document.getElementById('msg-in').oninput = function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+};
+
+// Quick buttons
+['q1','q2','q3','q4','q5'].forEach(function(id) {
+  document.getElementById(id).onclick = function() {
+    document.getElementById('msg-in').value = this.textContent;
+    send();
+  };
+});
+
+// Init
+window.onload = function() {
+  currentUser = getUser();
+
+  // URL dan buyurtma id
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('id')) buyurtmaId = params.get('id');
+
+  if (currentUser) {
+    document.getElementById('chat-st').textContent = currentUser.full_name || 'Fixly.uz';
+  }
+
+  loadMsgs();
+  pollTimer = setInterval(loadMsgs, 3000);
+};
+
+window.onbeforeunload = function() {
+  if (pollTimer) clearInterval(pollTimer);
+};
+</script>
+</body>
+</html>
