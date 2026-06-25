@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Buyurtma berish — Fixly.uz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --blue: #1a56db; --green: #3ab246; --gray-bg: #f4f6fb; --gray-text: #6b7280; --dark: #111827; --border: #e5e7eb; }
+    body { font-family: 'Inter', sans-serif; background: var(--gray-bg); color: var(--dark); }
+    nav { background: white; box-shadow: 0 1px 8px rgba(0,0,0,0.08); padding: 0 20px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .nav-logo { font-size: 20px; font-weight: 800; color: var(--blue); text-decoration: none; }
+    .nav-logo span { color: var(--green); }
+    .nav-back { color: var(--gray-text); text-decoration: none; font-size: 14px; font-weight: 600; }
+    .container { max-width: 560px; margin: 0 auto; padding: 20px 16px 48px; }
+
+    .progress { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 24px; }
+    .pdot { width: 32px; height: 32px; border-radius: 50%; background: #e5e7eb; color: #9ca3af; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .pdot.active { background: var(--blue); color: white; }
+    .pdot.done { background: var(--green); color: white; }
+    .pline { flex: 1; max-width: 50px; height: 3px; background: #e5e7eb; border-radius: 2px; }
+    .pline.done { background: var(--green); }
+
+    .card { background: white; border-radius: 20px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 16px; }
+    .card-title { font-size: 17px; font-weight: 800; margin-bottom: 18px; }
+
+    .usta-box { display: flex; align-items: center; gap: 12px; background: var(--gray-bg); border-radius: 12px; padding: 14px; margin-bottom: 20px; }
+    .usta-av { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--green)); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: white; flex-shrink: 0; }
+    .usta-name { font-size: 15px; font-weight: 700; }
+    .usta-job { font-size: 13px; color: var(--gray-text); }
+    .usta-stars { font-size: 12px; color: #f59e0b; }
+
+    .fg { margin-bottom: 16px; }
+    .fg label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .fg textarea, .fg input, .fg select { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-family: 'Inter', sans-serif; outline: none; background: #fafafa; color: var(--dark); }
+    .fg textarea { resize: none; min-height: 90px; }
+    .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .urg-row { display: flex; gap: 10px; }
+    .urg-btn { flex: 1; padding: 12px 8px; border: 2px solid var(--border); border-radius: 10px; text-align: center; cursor: pointer; font-size: 13px; font-weight: 600; background: white; color: var(--gray-text); }
+    .urg-btn.sel { border-color: var(--blue); background: #eff6ff; color: var(--blue); }
+    .urg-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+
+    .sum-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .sum-row:last-child { border-bottom: none; }
+    .sum-label { color: var(--gray-text); }
+    .sum-value { font-weight: 600; max-width: 60%; text-align: right; }
+
+    .btn-next { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--blue), #1341b0); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+    .btn-back { width: 100%; padding: 12px; background: white; color: var(--blue); border: 2px solid var(--blue); border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+
+    .success { display: none; text-align: center; padding: 32px; }
+    .success-icon { font-size: 72px; margin-bottom: 16px; }
+    .success-title { font-size: 22px; font-weight: 800; color: var(--green); margin-bottom: 8px; }
+    .success-text { color: var(--gray-text); font-size: 14px; line-height: 1.7; }
+    .order-num-box { background: var(--gray-bg); border-radius: 12px; padding: 14px; margin: 16px 0; }
+    .order-num-label { font-size: 12px; color: var(--gray-text); }
+    .order-num-val { font-size: 22px; font-weight: 800; color: var(--blue); }
+    .btn-home { width: 100%; padding: 14px; background: var(--blue); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 16px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="javascript:history.back()" class="nav-back">← Orqaga</a>
+  <a href="index.html" class="nav-logo">Fix<span>ly</span>.uz</a>
+  <div style="width:60px;"></div>
+</nav>
+
+<div class="container">
+  <div class="progress">
+    <div class="pdot active" id="p1">1</div>
+    <div class="pline" id="l1"></div>
+    <div class="pdot" id="p2">2</div>
+    <div class="pline" id="l2"></div>
+    <div class="pdot" id="p3">3</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div id="s1">
+    <div class="card">
+      <div class="card-title">🔧 Usta tanlandi</div>
+      <div class="usta-box">
+        <div class="usta-av" id="uav">⏳</div>
+        <div>
+          <div class="usta-name" id="unm" style="color:#9ca3af;">Yuklanmoqda...</div>
+          <div class="usta-job" id="ujb"></div>
+          <div class="usta-stars" id="ust"></div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>Muammo tavsifi *</label>
+        <textarea id="problem" placeholder="Masalan: Kran suv tomchilatyapti..."></textarea>
+      </div>
+
+      <div class="fg">
+        <label>Shoshilinchlik darajasi</label>
+        <div class="urg-row">
+          <div class="urg-btn sel" id="u1"><span class="urg-icon">🕐</span>Oddiy</div>
+          <div class="urg-btn" id="u2"><span class="urg-icon">⚡</span>Shoshilinch</div>
+          <div class="urg-btn" id="u3"><span class="urg-icon">🚨</span>Juda tez</div>
+        </div>
+      </div>
+
+      <button class="btn-next" id="btn1">Davom etish →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div id="s2" style="display:none;">
+    <div class="card">
+      <div class="card-title">📅 Sana va manzil</div>
+
+      <div class="fg">
+        <label>Qaysi kuni?</label>
+        <div class="date-row">
+          <input type="date" id="odate"/>
+          <input type="time" id="otime" value="10:00"/>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>Viloyat / Hudud</label>
+        <select id="oviloyat" onchange="loadTuman()">
+          <option value="">Tanlang...</option>
+          <option>Toshkent shahri</option>
+          <option>Toshkent viloyati</option>
+          <option>Samarqand viloyati</option>
+          <option>Buxoro viloyati</option>
+          <option>Andijon viloyati</option>
+          <option>Farg'ona viloyati</option>
+          <option>Namangan viloyati</option>
+          <option>Jizzax viloyati</option>
+          <option>Qashqadaryo viloyati</option>
+          <option>Surxondaryo viloyati</option>
+          <option>Navoiy viloyati</option>
+          <option>Xorazm viloyati</option>
+          <option>Qoraqalpog'iston</option>
+        </select>
+      </div>
+
+      <div class="fg" id="tuman-fg" style="display:none;">
+        <label>Shahar / Tuman</label>
+        <select id="ocity"><option value="">Tanlang...</option></select>
+      </div>
+
+      <div class="fg">
+        <label>To'liq manzil</label>
+        <input type="text" id="oaddr" placeholder="Ko'cha, uy raqami..."/>
+      </div>
+
+      <div class="fg">
+        <label>Telefon raqam</label>
+        <input type="tel" id="ophone" placeholder="+998 90 123 45 67"/>
+      </div>
+
+      <button class="btn-next" id="btn2">Davom etish →</button>
+      <button class="btn-back" id="btn-back1">← Orqaga</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div id="s3" style="display:none;">
+    <div class="card">
+      <div class="card-title">✅ Tasdiqlash</div>
+      <div id="summary"></div>
+      <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:10px;padding:12px;margin-top:16px;font-size:13px;color:#92400e;">
+        💡 Usta buyurtmangizni ko'rib, qabul yoki rad qiladi.
+      </div>
+      <button class="btn-next" id="btn3">📤 Buyurtma yuborish</button>
+      <button class="btn-back" id="btn-back2">← Orqaga</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="card success" id="success">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">Buyurtma yuborildi!</div>
+    <div class="success-text">Usta buyurtmangizni ko'rib chiqmoqda.</div>
+    <div class="order-num-box">
+      <div class="order-num-label">Buyurtma raqami</div>
+      <div class="order-num-val" id="onum">#FX-0000</div>
+    </div>
+    <div style="text-align:left;background:#f0fdf4;border-radius:12px;padding:14px;font-size:13px;color:#166534;">
+      ⏳ Usta 30 daqiqa ichida javob beradi<br/>
+      📱 Qabul qilinsa telefonga xabar keladi<br/>
+      🏠 Usta belgilangan vaqtda keladi<br/>
+      ⭐ Ish tugagach baholaysiz
+    </div>
+    <button class="btn-home" id="btn-home">🏠 Bosh sahifaga</button>
+  </div>
+</div>
+
+<script>
+var _sb = supabase.createClient(
+  'https://envyyamptxoqcfovdavm.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudnl5YW1wdHhvcWNmb3ZkYXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTI4NDEsImV4cCI6MjA5NzAyODg0MX0.qB-977hSOnQYizkYCzQxIBBQNqcdxJ-pbpx98yCToMU'
+);
+
+var urgency = 'normal';
+var ustaName = '';
+var ustaId = '';
+
+var TUMANLAR = {
+  'Toshkent shahri': ['Chilonzor','Mirzo Ulug\'bek','Yunusobod','Shayxontohur','Olmazor','Bektemir','Sergeli','Uchtepa','Yakkasaroy'],
+  'Toshkent viloyati': ['Angren','Bekobod','Bo\'stonliq','Buka','Chinoz','Ohangaron','Parkent','Piskent','Qibray','Toshkent tumani','Zangiota'],
+  'Samarqand viloyati': ['Samarqand shahri','Bulung\'ur','Ishtixon','Jomboy','Kattaqo\'rg\'on','Narpay','Oqdaryo','Pastdarg\'om','Payariq','Urgut'],
+  'Buxoro viloyati': ['Buxoro shahri','G\'ijduvon','Jondor','Kogon','Olot','Romitan','Shofirkon','Vobkent'],
+  'Andijon viloyati': ['Andijon shahri','Asaka','Baliqchi','Jalaquduq','Qo\'rg\'ontepa','Marhamat','Oltinko\'l','Shahrixon'],
+  'Farg\'ona viloyati': ['Farg\'ona shahri','Marg\'ilon','Qo\'qon','Beshariq','Dang\'ara','Oltiariq','Quva','Rishton','Uchko\'prik'],
+  'Namangan viloyati': ['Namangan shahri','Chortoq','Chust','Kosonsoy','Norin','Pop','To\'raqo\'rg\'on'],
+  'Jizzax viloyati': ['Jizzax shahri','Arnasoy','Baxmal','Do\'stlik','Forish','G\'allaorol','Mirzacho\'l','Paxtakor','Yangiobod','Zarbdor','Zafarobod','Ziyodin'],
+  'Qashqadaryo viloyati': ['Qarshi shahri','Chiroqchi','G\'uzor','Kasbi','Kitob','Koson','Muborak','Nishon','Shahrisabz'],
+  'Surxondaryo viloyati': ['Termiz shahri','Angor','Boysun','Denov','Jarqo\'rg\'on','Oltinsoy','Sherobod','Uzun'],
+  'Navoiy viloyati': ['Navoiy shahri','Karmana','Konimex','Navbahor','Nurota','Qiziltepa','Uchquduq'],
+  'Xorazm viloyati': ['Urganch shahri','Bog\'ot','Gurlan','Hazorasp','Xiva','Xonqa','Yangiariq','Yangibozor'],
+  'Qoraqalpog\'iston': ['Nukus shahri','Amudaryo','Beruniy','Chimboy','Kegeyli','Qo\'ng\'irot','Taxtako\'pir','To\'rtko\'l','Xo\'jayli'],
+};
+
+function setProgress(n) {
+  for (var i = 1; i <= 3; i++) {
+    var d = document.getElementById('p'+i);
+    d.className = i < n ? 'pdot done' : i === n ? 'pdot active' : 'pdot';
+  }
+  for (var j = 1; j <= 2; j++) {
+    document.getElementById('l'+j).className = j < n ? 'pline done' : 'pline';
+  }
+}
+
+function show(id) {
+  ['s1','s2','s3','success'].forEach(function(s) {
+    document.getElementById(s).style.display = s === id ? 'block' : 'none';
+  });
+  window.scrollTo(0,0);
+}
+
+function selUrg(val, id) {
+  urgency = val;
+  ['u1','u2','u3'].forEach(function(u) { document.getElementById(u).className = 'urg-btn'; });
+  document.getElementById(id).className = 'urg-btn sel';
+}
+
+function loadTuman() {
+  var v = document.getElementById('oviloyat').value;
+  var fg = document.getElementById('tuman-fg');
+  var sel = document.getElementById('ocity');
+  if (!v) { fg.style.display = 'none'; return; }
+  var list = TUMANLAR[v] || [];
+  sel.innerHTML = '<option value="">Tanlang...</option>';
+  list.forEach(function(t) {
+    var o = document.createElement('option');
+    o.value = t; o.textContent = t; sel.appendChild(o);
+  });
+  fg.style.display = 'block';
+}
+
+async function loadUsta() {
+  var params = new URLSearchParams(window.location.search);
+  ustaId = params.get('usta_id') || '';
+  if (!ustaId) return;
+
+  try {
+    var r1 = await _sb.from('ustalar').select('*').eq('id', ustaId).single();
+    if (!r1.data) return;
+    var r2 = await _sb.from('users').select('*').eq('id', r1.data.user_id).single();
+    if (!r2.data) return;
+
+    ustaName = r2.data.full_name;
+    var av = document.getElementById('uav');
+    av.textContent = ustaName[0].toUpperCase();
+    av.style.background = 'linear-gradient(135deg,#1a56db,#3ab246)';
+    document.getElementById('unm').textContent = ustaName;
+    document.getElementById('unm').style.color = '#111827';
+    document.getElementById('ujb').textContent = r1.data.specialty || '';
+    document.getElementById('ust').textContent = '★★★★★ ' + (r1.data.rating||0) + ' • ' + (r1.data.total_jobs||0) + ' ish';
+  } catch(e) {
+    document.getElementById('unm').textContent = 'Usta';
+    document.getElementById('unm').style.color = '#111827';
+  }
+}
+
+// Button events
+document.getElementById('u1').onclick = function() { selUrg('normal','u1'); };
+document.getElementById('u2').onclick = function() { selUrg('urgent','u2'); };
+document.getElementById('u3').onclick = function() { selUrg('very','u3'); };
+
+document.getElementById('btn1').onclick = function() {
+  var p = document.getElementById('problem').value.trim();
+  if (!p) { alert('Muammo tavsifini yozing!'); return; }
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('odate').min = today;
+  document.getElementById('odate').value = today;
+  show('s2'); setProgress(2);
+};
+
+document.getElementById('btn-back1').onclick = function() { show('s1'); setProgress(1); };
+
+document.getElementById('btn2').onclick = function() {
+  var v = document.getElementById('oviloyat').value;
+  var c = document.getElementById('ocity').value;
+  var a = document.getElementById('oaddr').value.trim();
+  var p = document.getElementById('ophone').value.trim();
+  if (!v) { alert('Viloyatni tanlang!'); return; }
+  if (!c) { alert('Shahar/tumanni tanlang!'); return; }
+  if (!a) { alert('Manzilni kiriting!'); return; }
+  if (!p) { alert('Telefon raqamni kiriting!'); return; }
+
+  var urgText = urgency==='normal'?'🕐 Oddiy':urgency==='urgent'?'⚡ Shoshilinch':'🚨 Juda tez';
+  var city = v + ', ' + c;
+  document.getElementById('summary').innerHTML =
+    '<div class="sum-row"><span class="sum-label">Usta</span><span class="sum-value">'+(ustaName||'Usta')+'</span></div>'+
+    '<div class="sum-row"><span class="sum-label">Muammo</span><span class="sum-value">'+document.getElementById('problem').value+'</span></div>'+
+    '<div class="sum-row"><span class="sum-label">Shoshilinchlik</span><span class="sum-value">'+urgText+'</span></div>'+
+    '<div class="sum-row"><span class="sum-label">Sana</span><span class="sum-value">'+document.getElementById('odate').value+' '+document.getElementById('otime').value+'</span></div>'+
+    '<div class="sum-row"><span class="sum-label">Hudud</span><span class="sum-value">'+city+'</span></div>'+
+    '<div class="sum-row"><span class="sum-label">Manzil</span><span class="sum-value">'+a+'</span></div>'+
+    '<div class="sum-row"><span class="sum-label">Telefon</span><span class="sum-value">'+p+'</span></div>';
+  show('s3'); setProgress(3);
+};
+
+document.getElementById('btn-back2').onclick = function() { show('s2'); setProgress(2); };
+
+document.getElementById('btn3').onclick = async function() {
+  var num = '#FX-' + String(Math.floor(Math.random()*9000)+1000);
+  var v = document.getElementById('oviloyat').value;
+  var c = document.getElementById('ocity').value;
+  var city = v + (c ? ', '+c : '');
+  var problem = document.getElementById('problem').value;
+  var addr = document.getElementById('oaddr').value;
+  var phone = document.getElementById('ophone').value;
+  var date = document.getElementById('odate').value;
+  var time = document.getElementById('otime').value;
+
+  var msg = '🔔 YANGI BUYURTMA!\n\n'+(ustaName?'👷 Usta: '+ustaName+'\n':'')+
+    '📋 Muammo: '+problem+'\n📍 Hudud: '+city+'\n🏠 Manzil: '+addr+
+    '\n📞 Telefon: '+phone+'\n📅 Sana: '+date+' '+time+'\n🔢 Raqam: '+num;
+
+  try {
+    await fetch('https://api.telegram.org/bot8816641134:AAH8O9IZGdjgfTyEuCNrWuu4ORW8ULh_Ipk/sendMessage',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:'8309575465', text:msg})
+    });
+    await _sb.from('buyurtmalar').insert([{
+      problem:problem, address:city+' '+addr, phone:phone,
+      date_time:date+' '+time, urgency:urgency, status:'pending'
+    }]);
+  } catch(e) {}
+
+  document.getElementById('onum').textContent = num;
+  show('success'); setProgress(3);
+};
+
+document.getElementById('btn-home').onclick = function() { window.location.href='index.html'; };
+
+window.addEventListener('load', loadUsta);
+</script>
+</body>
+</html>
