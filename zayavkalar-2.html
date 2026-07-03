@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Zayavkalar — Fixly.uz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --blue: #1a56db; --green: #3ab246; --gray-bg: #f4f6fb; --gray-text: #6b7280; --dark: #111827; --border: #e5e7eb; }
+    body { font-family: 'Inter', sans-serif; background: var(--gray-bg); color: var(--dark); }
+    nav { background: white; box-shadow: 0 1px 8px rgba(0,0,0,0.08); padding: 0 20px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .nav-logo { font-size: 20px; font-weight: 800; color: var(--blue); text-decoration: none; }
+    .nav-logo span { color: var(--green); }
+    .nav-back { color: var(--gray-text); text-decoration: none; font-size: 14px; font-weight: 600; }
+
+    .container { max-width: 600px; margin: 0 auto; padding: 20px 16px 48px; }
+    .page-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+    .page-sub { font-size: 13px; color: var(--gray-text); margin-bottom: 20px; }
+
+    .zcard { background: white; border-radius: 16px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 14px; }
+    .z-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .z-time { font-size: 12px; color: var(--gray-text); }
+    .z-problem { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+    .z-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .z-tag { background: var(--gray-bg); border-radius: 8px; padding: 4px 10px; font-size: 12px; color: var(--gray-text); font-weight: 600; }
+    .z-img { width: 100%; border-radius: 10px; margin-bottom: 12px; max-height: 200px; object-fit: cover; }
+    .z-count { font-size: 12px; color: var(--blue); font-weight: 600; margin-bottom: 10px; }
+
+    .btn-taklif { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--blue), #1341b0); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-taklif:disabled { background: #e5e7eb; color: var(--gray-text); cursor: not-allowed; }
+
+    .empty { text-align: center; padding: 48px 20px; color: var(--gray-text); }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+    /* MODAL */
+    .modal-bg { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+    .modal-box { background: white; border-radius: 20px; padding: 24px; max-width: 400px; width: 100%; }
+    .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+    .fg { margin-bottom: 14px; }
+    .fg label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .fg input, .fg textarea { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; }
+    .fg textarea { resize: none; min-height: 70px; }
+    .modal-btns { display: flex; gap: 10px; margin-top: 16px; }
+    .btn-cancel { flex: 1; padding: 12px; background: white; color: var(--gray-text); border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-confirm { flex: 1; padding: 12px; background: var(--green); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="usta-dashboard.html" class="nav-back">← Orqaga</a>
+  <a href="index.html" class="nav-logo">Fix<span>ly</span>.uz</a>
+  <div style="width:60px;"></div>
+</nav>
+
+<div class="container">
+  <div class="page-title">📋 Yangi zayavkalar</div>
+  <div class="page-sub">Sizning mutaxassisligingiz va hududingizga mos zayavkalar</div>
+
+  <div id="list">
+    <div class="empty"><div class="empty-icon">⏳</div>Yuklanmoqda...</div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal">
+  <div class="modal-box">
+    <div class="modal-title">💰 Taklif berish</div>
+    <div class="fg">
+      <label>Narxingiz (so'm)</label>
+      <input type="number" id="t-narx" placeholder="100000"/>
+    </div>
+    <div class="fg">
+      <label>Qachon bora olasiz?</label>
+      <input type="text" id="t-vaqt" placeholder="Masalan: Bugun 15:00 da"/>
+    </div>
+    <div class="fg">
+      <label>Izoh (ixtiyoriy)</label>
+      <textarea id="t-izoh" placeholder="Qo'shimcha ma'lumot..."></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Bekor qilish</button>
+      <button class="btn-confirm" id="submit-taklif">Yuborish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var sb = supabase.createClient(
+  'https://envyyamptxoqcfovdavm.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudnl5YW1wdHhvcWNmb3ZkYXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTI4NDEsImV4cCI6MjA5NzAyODg0MX0.qB-977hSOnQYizkYCzQxIBBQNqcdxJ-pbpx98yCToMU'
+);
+
+var currentUsta = null;
+var currentZayavkaId = null;
+
+function getUser() {
+  var v = localStorage.getItem('fixly_usta');
+  if (v) { try { return JSON.parse(v); } catch(e) {} }
+  return null;
+}
+
+async function loadZayavkalar() {
+  var user = getUser();
+  if (!user) {
+    document.getElementById('list').innerHTML = '<div class="empty"><div class="empty-icon">🔒</div>Avval kiring</div>';
+    return;
+  }
+
+  var ustaRes = await sb.from('ustalar').select('*').eq('user_id', user.id).single();
+  currentUsta = ustaRes.data;
+
+  if (!currentUsta) {
+    document.getElementById('list').innerHTML = '<div class="empty"><div class="empty-icon">😔</div>Usta profili topilmadi</div>';
+    return;
+  }
+
+  var res = await sb.from('zayavkalar').select('*').eq('status', 'open').eq('specialty', currentUsta.specialty).order('created_at', {ascending: false});
+  var zayavkalar = res.data || [];
+
+  var myTaklif = await sb.from('takliflar').select('zayavka_id').eq('usta_id', currentUsta.id);
+  var mySentIds = new Set((myTaklif.data || []).map(function(t) { return t.zayavka_id; }));
+
+  var list = document.getElementById('list');
+  if (zayavkalar.length === 0) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>Hozircha zayavka yo\'q<br/><span style="font-size:13px;">Yangi zayavka kelganda shu yerda ko\'rinadi</span></div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < zayavkalar.length; i++) {
+    var z = zayavkalar[i];
+    var countRes = await sb.from('takliflar').select('id', {count: 'exact', head: true}).eq('zayavka_id', z.id);
+    var count = countRes.count || 0;
+    var alreadySent = mySentIds.has(z.id);
+
+    html += '<div class="zcard">' +
+      '<div class="z-top"><div class="z-time">' + new Date(z.created_at).toLocaleString('uz', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + '</div></div>' +
+      '<div class="z-problem">' + z.muammo + '</div>' +
+      '<div class="z-tags"><span class="z-tag">🔧 ' + z.specialty + '</span><span class="z-tag">📍 ' + z.region + '</span></div>' +
+      (z.rasm_url ? '<img class="z-img" src="' + z.rasm_url + '"/>' : '') +
+      '<div class="z-count">💬 ' + count + ' ta usta taklif bergan' + (count >= 4 ? ' (to\'liq)' : '') + '</div>' +
+      '<button class="btn-taklif" ' + (alreadySent || count >= 4 ? 'disabled' : 'onclick="openModal(\'' + z.id + '\')"') + '>' +
+      (alreadySent ? '✅ Taklif yuborilgan' : count >= 4 ? '🔒 4 ta taklif to\'ldi' : '💰 Taklif berish') +
+      '</button>' +
+      '</div>';
+  }
+  list.innerHTML = html;
+}
+
+function openModal(zayavkaId) {
+  currentZayavkaId = zayavkaId;
+  document.getElementById('t-narx').value = '';
+  document.getElementById('t-vaqt').value = '';
+  document.getElementById('t-izoh').value = '';
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+
+document.getElementById('submit-taklif').onclick = async function() {
+  var narx = document.getElementById('t-narx').value.trim();
+  var vaqt = document.getElementById('t-vaqt').value.trim();
+  var izoh = document.getElementById('t-izoh').value.trim();
+
+  if (!narx) { alert('Narxni kiriting!'); return; }
+  if (!vaqt) { alert('Vaqtni kiriting!'); return; }
+
+  try {
+    await sb.from('takliflar').insert([{
+      zayavka_id: currentZayavkaId,
+      usta_id: currentUsta.id,
+      narx: parseInt(narx),
+      vaqt: vaqt,
+      izoh: izoh,
+      status: 'pending'
+    }]);
+
+    // Zayavkani olib, mijoz telefonini topib telegram xabar
+    var zRes = await sb.from('zayavkalar').select('*').eq('id', currentZayavkaId).single();
+    var user = getUser();
+    var msg = '💰 YANGI TAKLIF!\n\n👷 Usta: ' + user.full_name + '\n💵 Narx: ' + narx + ' so\'m\n⏰ Vaqt: ' + vaqt;
+    if (izoh) msg += '\n📝 Izoh: ' + izoh;
+
+    await fetch('https://api.telegram.org/bot8816641134:AAH8O9IZGdjgfTyEuCNrWuu4ORW8ULh_Ipk/sendMessage', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({chat_id:'8309575465', text: msg})
+    });
+
+    closeModal();
+    alert('✅ Taklifingiz yuborildi!');
+    loadZayavkalar();
+  } catch(e) {
+    alert('Xatolik: ' + e.message);
+  }
+};
+
+window.onload = loadZayavkalar;
+</script>
+</body>
+</html>
