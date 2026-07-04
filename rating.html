@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Baholash — Fixly.uz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --blue: #1a56db; --green: #3ab246; --yellow: #f59e0b; --gray-bg: #f4f6fb; --gray-text: #6b7280; --dark: #111827; --border: #e5e7eb; }
+    body { font-family: 'Inter', sans-serif; background: var(--gray-bg); color: var(--dark); min-height: 100vh; }
+    nav { background: white; box-shadow: 0 1px 8px rgba(0,0,0,0.08); padding: 0 20px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { font-size: 20px; font-weight: 800; color: var(--blue); text-decoration: none; }
+    .nav-logo span { color: var(--green); }
+    .nav-back { color: var(--gray-text); font-size: 14px; font-weight: 600; text-decoration: none; }
+    .container { max-width: 500px; margin: 0 auto; padding: 24px 16px 48px; }
+    .card { background: white; border-radius: 20px; padding: 28px 24px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); margin-bottom: 16px; }
+
+    .usta-info { display: flex; align-items: center; gap: 14px; padding: 16px; background: var(--gray-bg); border-radius: 14px; margin-bottom: 24px; }
+    .usta-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--green)); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: white; flex-shrink: 0; }
+    .usta-name { font-size: 16px; font-weight: 700; }
+    .usta-job { font-size: 13px; color: var(--gray-text); }
+
+    .stars-section { text-align: center; margin-bottom: 24px; }
+    .stars-title { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+    .stars-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 12px; }
+    .star-btn { font-size: 40px; cursor: pointer; filter: grayscale(1); opacity: 0.4; border: none; background: none; padding: 4px; }
+    .star-btn.active { filter: grayscale(0); opacity: 1; }
+    .rating-label { font-size: 15px; font-weight: 700; color: var(--yellow); min-height: 22px; }
+
+    .fg { margin-bottom: 20px; }
+    .fg label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .fg textarea { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; resize: none; min-height: 90px; }
+
+    .btn-submit { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--yellow), #d97706); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .success { display: none; text-align: center; padding: 40px 24px; }
+    .success-icon { font-size: 72px; margin-bottom: 16px; }
+    .success-title { font-size: 22px; font-weight: 800; color: var(--green); margin-bottom: 10px; }
+    .btn-home { width: 100%; padding: 14px; background: var(--blue); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 16px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="mijoz-dashboard.html" class="nav-back">← Orqaga</a>
+  <a href="index.html" class="nav-logo">Fix<span>ly</span>.uz</a>
+  <div style="width:60px;"></div>
+</nav>
+
+<div class="container">
+  <div id="rating-content">
+    <div class="card">
+      <div class="usta-info">
+        <div class="usta-avatar" id="uav">U</div>
+        <div>
+          <div class="usta-name" id="unm">Yuklanmoqda...</div>
+          <div class="usta-job" id="ujb"></div>
+        </div>
+      </div>
+
+      <div class="stars-section">
+        <div class="stars-title">Ishni baholang</div>
+        <div class="stars-row">
+          <button class="star-btn" data-n="1">⭐</button>
+          <button class="star-btn" data-n="2">⭐</button>
+          <button class="star-btn" data-n="3">⭐</button>
+          <button class="star-btn" data-n="4">⭐</button>
+          <button class="star-btn" data-n="5">⭐</button>
+        </div>
+        <div class="rating-label" id="rlabel">Yulduz tanlang</div>
+      </div>
+
+      <div class="fg">
+        <label>Izoh qoldiring (ixtiyoriy)</label>
+        <textarea id="comment" placeholder="Usta haqida fikringiz..."></textarea>
+      </div>
+
+      <button class="btn-submit" id="submit-btn" disabled>⭐ Baholashni yuborish</button>
+    </div>
+  </div>
+
+  <div class="card success" id="success">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">Rahmat!</div>
+    <p style="color:#6b7280;">Bahoyingiz saqlandi va usta reytingi yangilandi!</p>
+    <button class="btn-home" onclick="window.location.href='index.html'">🏠 Bosh sahifaga</button>
+  </div>
+</div>
+
+<script>
+var sb = supabase.createClient(
+  'https://envyyamptxoqcfovdavm.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudnl5YW1wdHhvcWNmb3ZkYXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTI4NDEsImV4cCI6MjA5NzAyODg0MX0.qB-977hSOnQYizkYCzQxIBBQNqcdxJ-pbpx98yCToMU'
+);
+
+var selectedRating = 0;
+var ustaId = null;
+var buyurtmaId = null;
+
+var labels = {1:'😞 Yomon',2:'😐 Qoniqarli',3:'🙂 Normal',4:'😊 Yaxshi',5:'🤩 Ajoyib!'};
+
+document.querySelectorAll('.star-btn').forEach(function(btn) {
+  btn.onclick = function() {
+    selectedRating = parseInt(this.getAttribute('data-n'));
+    document.querySelectorAll('.star-btn').forEach(function(b) {
+      b.classList.toggle('active', parseInt(b.getAttribute('data-n')) <= selectedRating);
+    });
+    document.getElementById('rlabel').textContent = labels[selectedRating];
+    document.getElementById('submit-btn').disabled = false;
+  };
+});
+
+async function loadUsta() {
+  var params = new URLSearchParams(window.location.search);
+  ustaId = params.get('usta_id');
+  buyurtmaId = params.get('buyurtma_id');
+
+  if (!ustaId) {
+    document.getElementById('unm').textContent = 'Usta topilmadi';
+    return;
+  }
+
+  try {
+    var uRes = await sb.from('ustalar').select('*').eq('id', ustaId).single();
+    var usta = uRes.data;
+    if (!usta) return;
+
+    var userRes = await sb.from('users').select('*').eq('id', usta.user_id).single();
+    var user = userRes.data;
+    var name = user ? user.full_name : 'Usta';
+
+    document.getElementById('uav').textContent = name[0].toUpperCase();
+    document.getElementById('unm').textContent = name;
+    document.getElementById('ujb').textContent = usta.specialty || '';
+  } catch(e) {}
+}
+
+document.getElementById('submit-btn').onclick = async function() {
+  if (!selectedRating || !ustaId) return;
+  var comment = document.getElementById('comment').value.trim();
+
+  try {
+    var uRes = await sb.from('ustalar').select('*').eq('id', ustaId).single();
+    var usta = uRes.data;
+
+    var oldSum = (usta.total_rating_sum || 0);
+    var oldCount = (usta.total_ratings || 0);
+    var newSum = oldSum + selectedRating;
+    var newCount = oldCount + 1;
+    var newRating = Math.round((newSum / newCount) * 10) / 10;
+
+    await sb.from('ustalar').update({
+      total_rating_sum: newSum,
+      total_ratings: newCount,
+      rating: newRating,
+      total_jobs: (usta.total_jobs || 0) + 1
+    }).eq('id', ustaId);
+
+    if (buyurtmaId) {
+      await sb.from('buyurtmalar').update({status: 'done'}).eq('id', buyurtmaId);
+    }
+
+    document.getElementById('rating-content').style.display = 'none';
+    document.getElementById('success').style.display = 'block';
+  } catch(e) {
+    alert('Xatolik: ' + e.message);
+  }
+};
+
+window.onload = loadUsta;
+</script>
+</body>
+</html>
